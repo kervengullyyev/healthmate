@@ -1,4 +1,10 @@
-import { applyTranscript, emptyTranscript, parseLiveEvent } from "./events";
+import {
+  applyTranscript,
+  emptyTranscript,
+  parseLiveEvent,
+  type LiveEvent,
+} from "./events";
+import { createAppointmentTools } from "./appointment-tools";
 import type { Message } from "../domain";
 export type LiveStatus =
   | "idle"
@@ -32,10 +38,95 @@ export function createLiveConnection(callbacks: Callbacks) {
     resolveClosed: (() => void) | null = null;
   let closePromise: Promise<void> | null = null,
     transcript = emptyTranscript();
+  type FunctionCall = { callId: string; name: string; arguments: string };
+  const batches = new Map<
+    string,
+    { responseId: string; calls: FunctionCall[] }
+  >();
+  const results = new Map<
+    string,
+    { call: FunctionCall; output: Record<string, unknown> }
+  >();
+  let appointmentTools = createAppointmentTools();
+  // GPT-Live forwards Responses events in an envelope. Calls are collected
+  // from output_item.done; completed.output is intentionally empty.
+  // https://developers.openai.com/api/docs/guides/live-delegation
+  function handleTools(envelope: LiveEvent) {
+    if (envelope.type !== "response.event") return false;
+    if (!ready || closePromise || !channel || channel.readyState !== "open")
+      return true;
+    const key = envelope.delegation_id,
+      event = envelope.event;
+    if (typeof key !== "string" || !event) return true;
+    if (
+      event.type === "response.created" &&
+      typeof event.response?.id === "string"
+    ) {
+      batches.set(key, { responseId: event.response.id, calls: [] });
+    } else if (event.type === "response.output_item.done") {
+      const batch = batches.get(key),
+        item = event.item;
+      if (
+        batch &&
+        item?.type === "function_call" &&
+        typeof item.call_id === "string" &&
+        typeof item.name === "string" &&
+        typeof item.arguments === "string" &&
+        !batch.calls.some((call) => call.callId === item.call_id)
+      ) {
+        batch.calls.push({
+          callId: item.call_id,
+          name: item.name,
+          arguments: item.arguments,
+        });
+      }
+    } else if (event.type === "response.completed") {
+      const batch = batches.get(key);
+      if (!batch || batch.responseId !== event.response?.id) return true;
+      batches.delete(key);
+      for (const call of batch.calls) {
+        const previous = results.get(call.callId);
+        const output = previous
+          ? previous.call.name === call.name &&
+            previous.call.arguments === call.arguments
+            ? previous.output
+            : {
+                status: "error",
+                message: "A repeated function call changed its arguments.",
+              }
+          : appointmentTools.run(call.name, call.arguments, transcript);
+        if (!previous) results.set(call.callId, { call, output });
+        channel.send(
+          JSON.stringify({
+            type: "response.item.create",
+            event_id: crypto.randomUUID(),
+            item: {
+              type: "function_call_output",
+              call_id: call.callId,
+              output: JSON.stringify(output),
+            },
+          }),
+        );
+      }
+      if (batch.calls.length)
+        channel.send(
+          JSON.stringify({
+            type: "response.create",
+            event_id: crypto.randomUUID(),
+          }),
+        );
+    } else if (
+      event.type === "response.failed" ||
+      event.type === "response.cancelled"
+    )
+      batches.delete(key);
+    return true;
+  }
   function cleanup() {
     active = false;
     ready = false;
     generation++;
+    batches.clear();
     clearTimeout(startupTimer);
     clearTimeout(closeTimer);
     controller?.abort();
@@ -106,6 +197,8 @@ export function createLiveConnection(callbacks: Callbacks) {
     finalised = false;
     closePromise = null;
     transcript = emptyTranscript();
+    appointmentTools = createAppointmentTools();
+    results.clear();
     const token = ++generation;
     callbacks.onStatus("connecting");
     startupTimer = setTimeout(
@@ -156,6 +249,7 @@ export function createLiveConnection(callbacks: Callbacks) {
         if (!active) return;
         const event = parseLiveEvent(data);
         if (!event) return;
+        if (handleTools(event)) return;
         if (event.type === "session.started") {
           ready = true;
           clearTimeout(startupTimer);
@@ -172,6 +266,7 @@ export function createLiveConnection(callbacks: Callbacks) {
           );
         } else {
           transcript = applyTranscript(transcript, event);
+          appointmentTools.observe(transcript);
           callbacks.onTranscript(transcript.messages);
         }
       });

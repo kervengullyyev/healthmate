@@ -29,7 +29,7 @@ test("account menu opens its three sections and saves the session profile", asyn
   ).toBeFocused();
 });
 
-test("appointments use the sample flow and records have an honest empty state on mobile", async ({
+test("appointments shows only bookings and records stays empty on mobile", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -43,35 +43,25 @@ test("appointments use the sample flow and records have an honest empty state on
     exact: true,
   });
   await expect(
-    appointments.getByText("Demo appointments · no real booking"),
+    appointments.getByText("No booked appointments yet."),
   ).toBeVisible();
-  await appointments
-    .getByRole("button", { name: "Select Dr. Anna Kowalska" })
-    .click();
-  await appointments
-    .getByRole("button", { name: "Confirm demo appointment" })
-    .click();
   await expect(
-    appointments.getByText("Your demo appointment is saved."),
+    appointments.getByRole("link", { name: "Book demo appointment" }),
   ).toBeVisible();
-  await appointments.getByRole("button", { name: "Close panel" }).click();
+  await expect(
+    appointments.locator(".clinician-card, .page-intro, .step-pill"),
+  ).toHaveCount(0);
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Open account menu" }).click();
   await page.getByRole("menuitem", { name: "Records", exact: true }).click();
-  const records = page.getByRole("dialog", { name: "Records", exact: true });
-  await expect(records.getByText("No conversation records yet.")).toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: "Records", exact: true }),
+  ).toContainText("No conversation records yet.");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Open account menu" }).click();
-  await page
-    .getByRole("menuitem", { name: "Appointments", exact: true })
-    .click();
-  await expect(
-    appointments.getByText("Your demo appointment is saved."),
-  ).toBeVisible();
 });
 
 test("records preserves the current transcript and closes live media before opening", async ({

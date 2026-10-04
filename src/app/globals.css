@@ -2306,3 +2306,23 @@ main {
   .account-menu { top: 16px; right: 16px; }
   .account-panel { padding: 20px; }
 }
+
+.booked-appointments ol { display: flex; flex-direction: column; gap: 12px; padding: 0; margin: 0 0 24px; list-style: none; }
+.booked-appointments li { display: flex; align-items: flex-start; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; }
+.booked-appointments li > svg { flex-shrink: 0; color: var(--teal); margin-top: 2px; }
+.booked-appointments li strong { font-size: 15px; }
+.booked-appointments li p { margin: 8px 0 6px; font-size: 14px; }
+.booked-appointments li span { font-size: 12px; color: #66765e; }
+.appointments-empty { padding: 24px 0 36px; color: #66765e; text-align: center; }
+.appointment-form-page { min-height: 100svh; display: grid; place-items: center; padding: 24px 16px; }
+.appointment-form-card { width: min(100%, 460px); padding: 32px; border: 1px solid var(--line); border-radius: 24px; background: #fffefa; }
+.appointment-form-card h1 { margin-bottom: 14px; font-size: 26px; letter-spacing: -0.7px; }
+.appointment-form-card form { display: flex; flex-direction: column; gap: 12px; }
+.appointment-form-card label { font-size: 14px; font-weight: 600; margin-top: 8px; }
+.appointment-form-card input, .appointment-form-card select { width: 100%; min-width: 0; min-height: 46px; padding: 12px; border: 1px solid #dce6dd; border-radius: 12px; background: white; color: var(--ink); font: inherit; }
+.appointment-form-card select:focus-visible { outline: 3px solid #a6c8b4; outline-offset: 4px; }
+.appointment-form-card form .button { margin-top: 14px; }
+.appointment-back { align-self: center; padding: 8px; font-size: 13px; color: var(--teal); }
+.appointment-form-summary { margin: 24px 0; line-height: 1.9; }
+.appointment-form-error { margin-top: 8px; color: #925047; font-size: 13px; line-height: 1.6; }
+@media (max-width: 650px) { .appointment-form-card { padding: 24px; } }

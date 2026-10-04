@@ -24,7 +24,7 @@ OPENAI_BACKEND_MODEL=gpt-6-luna
 OPENAI_LIVE_VOICE=marin
 ```
 
-The voice model is exactly **gpt-live-1**, using the Live WebRTC API with Responses delegation. The backend model and voice are server-configurable. The project/account must have access to these models. Microphone access needs localhost or HTTPS and browser permission; remote audio may require the **Enable audio** button if playback is blocked. On `/journey`, end a voice session before generating its plan, so final captions can arrive. The main screen keeps captions in the Records panel. The top-right menu also opens a session-only profile and the sample appointment flow.
+The voice model is exactly **gpt-live-1**, using the Live WebRTC API with Responses delegation. The backend model and voice are server-configurable. The project/account must have access to these models. Microphone access needs localhost or HTTPS and browser permission; remote audio may require the **Enable audio** button if playback is blocked. On `/journey`, end a voice session before generating its plan, so final captions can arrive. The main screen keeps captions in the Records panel. The top-right menu opens a session-only profile and a list of booked demo appointments. A small doctor/date/time form is available at `/appointments/new`. Milo can prepare a routine demo slot, ask the specific confirmation question, then save it after fresh explicit consent. Manual and voice bookings share validation and browser storage.
 
 ## What works
 
@@ -47,13 +47,13 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-On 4 October 2026: 23 unit tests and 21 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified**; automated checks use mocked live audio and upstream calls, with actual browser playback of the supplied speaking video. See [verification evidence](docs/verification.md).
+On 4 October 2026: 28 unit tests and 25 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified**; automated checks use mocked live audio and upstream calls, with actual browser playback of the supplied speaking video. See [verification evidence](docs/verification.md).
 
 ## Prototype boundaries
 
 HealthMate is an adult health companion, not a clinician or a clinically validated triage service. It does not diagnose or prescribe. AI output can be wrong and needs human review. Unknown history stays unknown. Possible urgent symptoms trigger professional-help guidance, not routine sample booking.
 
-There are no real appointments, external clinic contacts, authentication, uploads, analytics or app-side audio recording. Live transcripts, plans and edits stay in browser memory; refreshing loses them. OpenAI receives live audio and messages used for responses; standalone Responses requests use `store: false`. OpenAI service data policies still apply. Only a synthetic demo booking is stored in this app's localStorage namespace. Reset clears it.
+There are no real appointments, external clinic contacts, authentication, uploads, analytics or app-side audio recording. Live transcripts, plans and edits stay in browser memory; refreshing loses them. OpenAI receives live audio and messages used for responses; standalone Responses requests use `store: false`. OpenAI service data policies still apply. Only synthetic demo bookings are stored in this app's localStorage namespaces. The journey reset clears its own sample booking; the main Appointments list remains until browser storage is cleared.
 
 API endpoints accept matching loopback origins (localhost, 127.0.0.1 or ::1), with bounded bodies and local process rate limits. These are appropriate for this local prototype; public hosting needs authentication, durable rate limits, a privacy/retention review and clinical evaluation before use. This scope does not publish a site.
 
@@ -62,3 +62,5 @@ Live interviews have a visible message/body budget so the full history and later
 The demo is fixed; it does not interpret custom symptoms. Print/save PDF uses the browser, and the editable brief should be checked before export.
 
 [90-second demo script](docs/demo-script.md) · [AI and resource disclosures](docs/ai-and-resources.md) · [Approved design](docs/superpowers/specs/2026-10-04-healthmate-design.md)
+
+Voice booking currently accepts clear English confirmations such as yes, OK, and yes that works. The confirmation question includes the exact doctor/date/time; unrelated questions or stale replies cannot approve it. Other replies require clarification. Actual account-backed model speech/tool timing remains unverified.

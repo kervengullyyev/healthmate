@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CalendarDays, FileText, UserRound, X } from "lucide-react";
-import { Appointments } from "@/components/appointments";
-import { clinicians } from "@/lib/demo";
-import type { Booking, Message } from "@/lib/domain";
+import { BookedAppointments } from "@/components/booked-appointments";
+import type { Message } from "@/lib/domain";
+import {
+  readDemoAppointments,
+  type DemoAppointment,
+} from "@/lib/demo-appointments";
 
 const sections = [
   { name: "Profile", Icon: UserRound },
@@ -12,28 +15,6 @@ const sections = [
   { name: "Records", Icon: FileText },
 ] as const;
 type Section = (typeof sections)[number]["name"];
-const bookingKey = "healthmate-demo-booking";
-
-function savedBooking(): Booking | null {
-  try {
-    const saved = JSON.parse(localStorage.getItem(bookingKey) ?? "null");
-    if (
-      saved?.demo === true &&
-      typeof saved.id === "string" &&
-      saved.id.length > 0 &&
-      saved.id.length <= 120 &&
-      typeof saved.slot === "string" &&
-      saved.slot.length > 0 &&
-      saved.slot.length <= 200 &&
-      clinicians.some((clinician) => clinician.id === saved.clinicianId)
-    )
-      return saved;
-  } catch {
-    /* A demo booking is optional when browser storage is unavailable. */
-  }
-  return null;
-}
-
 export function AccountMenu({
   messages,
   beforeOpen,
@@ -46,8 +27,7 @@ export function AccountMenu({
   const [opening, setOpening] = useState(false);
   const [profileName, setProfileName] = useState("");
   const [draftName, setDraftName] = useState("");
-  const [booking, setBooking] = useState<Booking | null>(null);
-  const [storageNotice, setStorageNotice] = useState("");
+  const [appointments, setAppointments] = useState<DemoAppointment[]>([]);
   const wrapper = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
@@ -73,8 +53,7 @@ export function AccountMenu({
     try {
       await beforeOpen();
       if (section === "Profile") setDraftName(profileName);
-      if (section === "Appointments")
-        setBooking((current) => savedBooking() ?? current);
+      if (section === "Appointments") setAppointments(readDemoAppointments());
       setPanel(section);
     } finally {
       setOpening(false);
@@ -150,7 +129,7 @@ export function AccountMenu({
       </div>
       <dialog
         ref={dialog}
-        className={`account-panel ${panel === "Appointments" ? "account-panel-wide" : ""}`}
+        className="account-panel"
         aria-labelledby="account-title"
         onClose={() => {
           setPanel(null);
@@ -196,30 +175,7 @@ export function AccountMenu({
               </form>
             )}
             {panel === "Appointments" && (
-              <>
-                <Appointments
-                  booking={booking}
-                  briefLabel="View conversation records"
-                  confirmNote="You can review your conversation with Milo in Records."
-                  onBrief={() => setPanel("Records")}
-                  onConfirm={(next) => {
-                    setBooking(next);
-                    try {
-                      localStorage.setItem(bookingKey, JSON.stringify(next));
-                      setStorageNotice("");
-                    } catch {
-                      setStorageNotice(
-                        "This sample appointment is saved for this page session only.",
-                      );
-                    }
-                  }}
-                />
-                {storageNotice && (
-                  <p className="account-note" role="status">
-                    {storageNotice}
-                  </p>
-                )}
-              </>
+              <BookedAppointments appointments={appointments} />
             )}
             {panel === "Records" && (
               <div className="account-records">

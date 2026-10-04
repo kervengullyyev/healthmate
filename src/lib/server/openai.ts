@@ -5,6 +5,10 @@ import {
   liveInstructions,
   planInstructions,
 } from "./prompts";
+import {
+  appointmentInstructions,
+  appointmentTools,
+} from "./appointment-config";
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -78,7 +82,10 @@ export function getLiveConfig() {
       type: "responses",
       responses: {
         model: process.env.OPENAI_BACKEND_MODEL || "gpt-6-luna",
-        instructions: healthInstructions,
+        instructions: `${healthInstructions}\n${appointmentInstructions()}`,
+        tools: appointmentTools,
+        tool_choice: "auto",
+        parallel_tool_calls: false,
       },
     },
   };

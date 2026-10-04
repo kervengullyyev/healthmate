@@ -7,6 +7,7 @@ declare global {
       closes: number;
       speaking: boolean;
       message: (role: "user" | "assistant", text: string) => void;
+      tool: (name: string, args: unknown) => Promise<Record<string, unknown>>;
     };
   }
 }
@@ -28,7 +29,12 @@ export async function fakeVoice(
         closes: 0,
         speaking: false,
         message: () => {},
+        tool: async () => ({}),
       };
+      const pendingTools = new Map<
+        string,
+        (result: Record<string, unknown>) => void
+      >();
       const track = { enabled: true, stop: () => window.voiceTest.stopped++ };
       const stream = {
         getTracks: () => [track],
@@ -74,7 +80,17 @@ export async function fakeVoice(
         readyState = "open";
         close() {}
         send(value: string) {
-          if (JSON.parse(value).type === "session.close") {
+          const event = JSON.parse(value);
+          if (
+            event.type === "response.item.create" &&
+            event.item?.type === "function_call_output"
+          ) {
+            pendingTools.get(event.item.call_id)?.(
+              JSON.parse(event.item.output),
+            );
+            pendingTools.delete(event.item.call_id);
+          }
+          if (event.type === "session.close") {
             window.voiceTest.closes++;
             this.dispatchEvent(
               new MessageEvent("message", {
@@ -97,7 +113,9 @@ export async function fakeVoice(
         }
         async setLocalDescription() {}
         async setRemoteDescription() {
+          let offset = 0;
           window.voiceTest.message = (role, text) => {
+            offset += 3000;
             this.channel.dispatchEvent(
               new MessageEvent("message", {
                 data: JSON.stringify({
@@ -107,12 +125,69 @@ export async function fakeVoice(
                       : "session.output_transcript.delta",
                   event_id: crypto.randomUUID(),
                   delta: text,
-                  start_ms: role === "user" ? 100 : 500,
-                  end_ms: role === "user" ? 400 : 900,
+                  start_ms: offset,
+                  end_ms: offset + 500,
                 }),
               }),
             );
           };
+          window.voiceTest.tool = (name, args) =>
+            new Promise((resolve, reject) => {
+              const callId = crypto.randomUUID();
+              const delegationId = crypto.randomUUID();
+              const responseId = crypto.randomUUID();
+              const timeout = setTimeout(() => {
+                pendingTools.delete(callId);
+                reject(new Error("No function result returned"));
+              }, 3000);
+              pendingTools.set(callId, (result) => {
+                clearTimeout(timeout);
+                resolve(result);
+              });
+              for (const event of [
+                {
+                  type: "response.created",
+                  response: {
+                    id: responseId,
+                    status: "in_progress",
+                    output: [],
+                  },
+                },
+                {
+                  type: "response.output_item.done",
+                  sequence_number: 1,
+                  output_index: 0,
+                  item: {
+                    id: crypto.randomUUID(),
+                    type: "function_call",
+                    status: "completed",
+                    call_id: callId,
+                    name,
+                    arguments: JSON.stringify(args),
+                  },
+                },
+                {
+                  type: "response.completed",
+                  response: {
+                    id: responseId,
+                    status: "completed",
+                    output: [],
+                    tools: [],
+                    instructions: null,
+                  },
+                },
+              ])
+                this.channel.dispatchEvent(
+                  new MessageEvent("message", {
+                    data: JSON.stringify({
+                      type: "response.event",
+                      event_id: crypto.randomUUID(),
+                      delegation_id: delegationId,
+                      event,
+                    }),
+                  }),
+                );
+            });
           if (withSpeaking) {
             const trackEvent = new Event("track");
             Object.defineProperty(trackEvent, "track", { value: {} });

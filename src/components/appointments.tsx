@@ -14,14 +14,10 @@ export function Appointments({
   booking,
   onConfirm,
   onBrief,
-  briefLabel = "Prepare my doctor brief",
-  confirmNote = "Your doctor brief will be ready to take along.",
 }: {
   booking: Booking | null;
   onConfirm: (booking: Booking) => void;
   onBrief: () => void;
-  briefLabel?: string;
-  confirmNote?: string;
 }) {
   const [selection, setSelection] = useState<string | null>(null);
   const [offset, setOffset] = useState(1);
@@ -69,7 +65,7 @@ export function Appointments({
             </div>
           </div>
           <button className="button primary" onClick={onBrief}>
-            {briefLabel} <ArrowRight size={16} />
+            Prepare my doctor brief <ArrowRight size={16} />
           </button>
         </section>
       ) : (
@@ -137,7 +133,7 @@ export function Appointments({
                   ? `${chosen.name} · ${appointmentDate(offset)}, ${chosen.slot}`
                   : "Choose a sample appointment to continue."}
               </strong>
-              <p>{confirmNote}</p>
+              <p>Your doctor brief will be ready to take along.</p>
             </div>
             <button
               className="button primary"

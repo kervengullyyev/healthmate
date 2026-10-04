@@ -6,6 +6,17 @@ export type LiveEvent = {
   start_ms?: number;
   end_ms?: number;
   session?: { id: string };
+  delegation_id?: string;
+  event?: {
+    type?: string;
+    response?: { id?: string };
+    item?: {
+      type?: string;
+      call_id?: string;
+      name?: string;
+      arguments?: string;
+    };
+  };
 };
 type Fragment = {
   role: "user" | "assistant";

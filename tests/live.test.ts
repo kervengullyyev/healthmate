@@ -203,3 +203,57 @@ it("deduplicates events while preserving overlapping speech and exact text", () 
   ]);
   expect("plan" in state).toBe(false);
 });
+
+it("returns completed tool results only after the delegated response finishes", async () => {
+  const connection = createLiveConnection(callbacks());
+  await connected(connection);
+  const channel = Peer.latest.channel;
+  const envelope = (event: object) =>
+    channel.emit({
+      type: "response.event",
+      event_id: crypto.randomUUID(),
+      delegation_id: "delegation_test",
+      event,
+    });
+  envelope({
+    type: "response.created",
+    response: { id: "response_test", status: "in_progress", output: [] },
+  });
+  envelope({
+    type: "response.output_item.done",
+    output_index: 0,
+    item: {
+      id: "function_test",
+      type: "function_call",
+      status: "completed",
+      call_id: "call_test",
+      name: "unknown_action",
+      arguments: "{}",
+    },
+  });
+  expect(channel.sent).toHaveLength(0);
+  envelope({
+    type: "response.completed",
+    response: {
+      id: "response_test",
+      status: "completed",
+      output: [],
+      tools: [],
+      instructions: null,
+    },
+  });
+  const sent = channel.sent.map((value) => JSON.parse(value));
+  expect(sent[0]).toMatchObject({
+    type: "response.item.create",
+    item: { type: "function_call_output", call_id: "call_test" },
+  });
+  expect(JSON.parse(sent[0].item.output)).toMatchObject({ status: "error" });
+  expect(sent[1]).toMatchObject({ type: "response.create" });
+  envelope({
+    type: "response.completed",
+    response: { id: "response_test", status: "completed", output: [] },
+  });
+  expect(channel.sent).toHaveLength(2);
+  connection.dispose();
+  channel.emit({ type: "session.closed" });
+});
