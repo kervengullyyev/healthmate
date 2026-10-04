@@ -1,6 +1,6 @@
 # HealthMate
 
-A hackathon health companion with a minimal main screen: Milo and one **Talk to Milo** button. Click to start voice; the same button cancels setup or ends the conversation. While Milo speaks, the supplied `public/videos/milo.mp4` plays muted and loops for longer responses; the still avatar returns during silence.
+A hackathon health companion with a minimal main screen: Milo, one **Talk to Milo** button and a compact top-right account icon. Click to start voice; the same button cancels setup or ends the conversation. While Milo speaks, the supplied `public/videos/milo.mp4` plays muted and loops for longer responses; the still avatar returns during silence.
 
 The complete care-plan, sample appointment and editable doctor-brief journey remains available at `/journey`. Clinicians and appointment slots are synthetic samples.
 
@@ -24,7 +24,7 @@ OPENAI_BACKEND_MODEL=gpt-6-luna
 OPENAI_LIVE_VOICE=marin
 ```
 
-The voice model is exactly **gpt-live-1**, using the Live WebRTC API with Responses delegation. The backend model and voice are server-configurable. The project/account must have access to these models. Microphone access needs localhost or HTTPS and browser permission; remote audio may require the **Enable audio** button if playback is blocked. On `/journey`, end a voice session before generating its plan, so final captions can arrive. The minimal Milo screen keeps captions out of the visible interface.
+The voice model is exactly **gpt-live-1**, using the Live WebRTC API with Responses delegation. The backend model and voice are server-configurable. The project/account must have access to these models. Microphone access needs localhost or HTTPS and browser permission; remote audio may require the **Enable audio** button if playback is blocked. On `/journey`, end a voice session before generating its plan, so final captions can arrive. The main screen keeps captions in the Records panel. The top-right menu also opens a session-only profile and the sample appointment flow.
 
 ## What works
 
@@ -47,7 +47,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-On 4 October 2026: 23 unit tests and 17 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified**; automated checks use mocked live audio and upstream calls, with actual browser playback of the supplied speaking video. See [verification evidence](docs/verification.md).
+On 4 October 2026: 23 unit tests and 21 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified**; automated checks use mocked live audio and upstream calls, with actual browser playback of the supplied speaking video. See [verification evidence](docs/verification.md).
 
 ## Prototype boundaries
 

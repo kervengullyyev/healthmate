@@ -6,6 +6,7 @@ declare global {
       closed: boolean;
       closes: number;
       speaking: boolean;
+      message: (role: "user" | "assistant", text: string) => void;
     };
   }
 }
@@ -26,6 +27,7 @@ export async function fakeVoice(
         closed: false,
         closes: 0,
         speaking: false,
+        message: () => {},
       };
       const track = { enabled: true, stop: () => window.voiceTest.stopped++ };
       const stream = {
@@ -95,6 +97,22 @@ export async function fakeVoice(
         }
         async setLocalDescription() {}
         async setRemoteDescription() {
+          window.voiceTest.message = (role, text) => {
+            this.channel.dispatchEvent(
+              new MessageEvent("message", {
+                data: JSON.stringify({
+                  type:
+                    role === "user"
+                      ? "session.input_transcript.delta"
+                      : "session.output_transcript.delta",
+                  event_id: crypto.randomUUID(),
+                  delta: text,
+                  start_ms: role === "user" ? 100 : 500,
+                  end_ms: role === "user" ? 400 : 900,
+                }),
+              }),
+            );
+          };
           if (withSpeaking) {
             const trackEvent = new Event("track");
             Object.defineProperty(trackEvent, "track", { value: {} });

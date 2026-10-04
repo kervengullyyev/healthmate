@@ -29,3 +29,5 @@ Finish: keep codex/healthmate as the local deliverable; no remote is configured 
 Deferred minors: none.
 
 Video revision: user supplied public/videos/milo.mp4 and requested speech playback with looping. Avatar now plays the native clip muted/inline during detected speech, bridges 250 ms gaps between words, pauses/rewinds during silence and falls back to the original still image if playback fails. Native browser playback/looping regression observed RED→GREEN. Final verification: 23 unit/17 browser checks plus lint, typecheck and build pass. Server configuration status now true; no account-backed voice claim made.
+
+Account menu revision: user requested one top-right icon with Profile, Appointments and Records. Added a compact accessible dropdown and native dialog panels; current-session profile/transcripts stay in memory, and only validated synthetic bookings use the existing demo storage namespace. Selecting a panel cancels pending setup or gracefully ends voice before displaying the panel. Four new browser regressions observed RED→GREEN. Desktop/mobile screenshots inspected. Final checks: 23 unit/21 browser tests, lint, typecheck and production build pass.

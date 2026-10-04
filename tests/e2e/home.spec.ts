@@ -1,13 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { fakeVoice } from "../helpers/fake-voice";
 
-test("shows only Milo and the Talk to Milo action", async ({ page }) => {
+test("keeps Milo centered with one voice action and a compact account icon", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("img", { name: /Milo/ })).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Talk to Milo", exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole("button")).toHaveCount(1);
+  await expect(page.getByRole("button")).toHaveCount(2);
   await expect(page.locator("nav, header, footer")).toHaveCount(0);
   await expect(page.getByRole("heading")).toHaveCount(0);
 });
@@ -42,7 +42,7 @@ test("the same button starts and ends voice while keeping the screen minimal", a
   ).toBeVisible();
   expect(await page.evaluate(() => window.voiceTest.stopped)).toBe(1);
   expect(await page.evaluate(() => window.voiceTest.closes)).toBe(1);
-  await expect(page.getByRole("button")).toHaveCount(1);
+  await expect(page.getByRole("button")).toHaveCount(2);
 });
 
 test("cancelling microphone setup stops a late stream without opening a session", async ({
@@ -77,7 +77,7 @@ test("unconfigured voice reports a short error without requesting the microphone
   await expect(
     page.getByRole("alert").filter({ hasText: "Milo’s voice" }),
   ).toContainText("Milo’s voice isn’t configured yet.");
-  await expect(page.getByRole("button")).toHaveCount(1);
+  await expect(page.getByRole("button")).toHaveCount(2);
 });
 
 test("plays and loops Milo's video during speech, then returns to the still avatar", async ({
@@ -144,5 +144,5 @@ test("plays and loops Milo's video during speech, then returns to the still avat
   await page
     .getByRole("button", { name: "End conversation", exact: true })
     .click();
-  await expect(page.getByRole("button")).toHaveCount(1);
+  await expect(page.getByRole("button")).toHaveCount(2);
 });

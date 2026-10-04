@@ -2272,3 +2272,37 @@ main {
   line-height: 1.6;
   text-align: center;
 }
+
+/* Quiet access to personal details without changing Milo's central layout. */
+.account-menu { position: fixed; top: 24px; right: 24px; z-index: 20; }
+.account-icon { display: grid; place-items: center; width: 46px; height: 46px; padding: 0; border: 1px solid #dce6dd; border-radius: 50%; background: #edf3ed; color: var(--teal); }
+.account-icon:hover:not(:disabled) { background: #e1ece2; }
+.account-options { position: absolute; top: 56px; right: 0; width: 210px; padding: 8px; border: 1px solid var(--line); border-radius: 18px; background: #fffefa; box-shadow: 0 12px 40px #253f3614; }
+.account-options button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 12px; border: 0; border-radius: 11px; background: transparent; color: var(--ink); text-align: left; font-size: 14px; }
+.account-options button:hover, .account-options button:focus-visible { background: #edf3ed; }
+.account-panel { width: min(560px, calc(100vw - 32px)); max-height: calc(100svh - 48px); margin: auto; padding: 28px; border: 1px solid var(--line); border-radius: 24px; background: #fffefa; color: var(--ink); box-shadow: 0 24px 100px #253f3624; overflow-y: auto; }
+.account-panel::backdrop { background: #203b3540; backdrop-filter: blur(5px); }
+.account-panel-wide { width: min(1040px, calc(100vw - 32px)); }
+.account-panel-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 24px; }
+.account-panel-heading h2 { margin: 0; font-size: 24px; letter-spacing: -0.6px; }
+.account-panel-heading .account-icon { flex-shrink: 0; width: 38px; height: 38px; }
+.account-profile { display: flex; flex-direction: column; gap: 16px; }
+.account-profile > p { margin: 0 0 6px; color: #66765e; }
+.account-profile label { font-size: 14px; font-weight: 600; }
+.account-profile input { width: 100%; padding: 13px 14px; border: 1px solid #dce6dd; border-radius: 12px; background: white; color: var(--ink); font: inherit; }
+.account-profile .button { align-self: flex-start; }
+.account-note { margin: 0 0 20px; font-size: 13px; line-height: 1.65; color: #66765e; }
+.account-profile p.account-note { font-size: 13px; margin: 0 0 8px; }
+.account-empty { display: flex; flex-direction: column; align-items: center; padding: 32px 8px 24px; text-align: center; color: #66765e; }
+.account-empty h3 { margin: 16px 0 8px; color: var(--ink); font-size: 18px; }
+.account-empty p { margin: 0; font-size: 14px; line-height: 1.6; }
+.account-records ol { display: flex; flex-direction: column; gap: 12px; padding: 0; margin: 0; list-style: none; }
+.account-records li { padding: 16px; border-radius: 14px; background: #f0f4ed; }
+.account-records li strong { font-size: 13px; color: var(--teal); }
+.account-records li p { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.7; }
+.account-panel .content-page { padding: 0; }
+.account-panel .step-pill { display: none; }
+@media (max-width: 650px) {
+  .account-menu { top: 16px; right: 16px; }
+  .account-panel { padding: 20px; }
+}

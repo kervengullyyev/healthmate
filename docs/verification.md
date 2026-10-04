@@ -3,7 +3,7 @@
 Verified locally on Node.js 22, macOS and Chromium.
 
 - Unit suite: 23/23 passing across domain validation, session isolation, API boundaries and fake WebRTC lifecycle.
-- Browser suite: 17/17 passing, including the five-screen demo, editable brief, print media, local demo booking persistence, failed plan regeneration, urgent mobile routing, keyboard entry, real local API origin validation, navigation during microphone acquisition, active voice closing, urgent exports and the interview budget.
+- Browser suite: 21/21 passing, including the five-screen demo, editable brief, print media, local demo booking persistence, failed plan regeneration, urgent mobile routing, keyboard entry, real local API origin validation, navigation during microphone acquisition, active voice closing, urgent exports and the interview budget.
 - Production build, ESLint and TypeScript: passing.
 - Visual inspection: desktop and 390-pixel mobile home, conversation, care plan, appointments and doctor brief. Avatar transparency, overflow, focus and text contrast checked.
 - Live account-backed microphone/audio, interruption handling and real captions: unverified in this change. The server now reports a configured project key, but these checks used mocked live audio and upstream requests. Mocked tests verify the protocol and resource lifecycle, not actual model audio.
@@ -19,3 +19,5 @@ Final visual regressions also covered: mobile navigation resets to the new scree
 Latest user revision: the main screen now contains only Milo and one voice button. Five browser checks verify minimal content, mobile fit, start/end, cancellation of late microphone acquisition and configuration errors. The complete journey remains at `/journey` and retains its regression suite. [Minimal mobile screen](screenshots/home-mobile.png).
 
 Speaking video: actual Chromium playback of `/videos/milo.mp4` verified with mocked live audio amplitude, including native looping at the clip boundary, muted inline playback, and pause/return to the still avatar during silence. The supplied clip is 10.005 seconds, 720 × 1280, H.264/AAC; its own audio remains muted.
+
+Account menu revision: top-right icon opens Profile, Appointments and Records. Four new browser checks cover session-only name editing, mobile sample booking, empty/current conversation records, stopping live media before opening a panel, keyboard navigation, Escape/focus return and outside-click dismissal. Inspected the desktop menu/profile and mobile appointment panel; refreshed home screenshots. [Account menu](screenshots/account-menu.png).

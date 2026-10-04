@@ -1,13 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mic, PhoneOff, Volume2, X } from "lucide-react";
 import { Avatar } from "@/components/avatar";
 import { useLive } from "@/hooks/use-live";
+import { AccountMenu } from "@/components/account-menu";
+import type { Message } from "@/lib/domain";
 
 export default function Page() {
-  const ignoreTranscript = useCallback(() => {}, []);
-  const live = useLive(ignoreTranscript);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const live = useLive(setMessages);
   const [checking, setChecking] = useState(false);
   const [notice, setNotice] = useState("");
   const preflight = useRef<AbortController | null>(null);
@@ -49,6 +51,7 @@ export default function Page() {
       }
       preflight.current = null;
       setChecking(false);
+      setMessages([]);
       await live.start();
     } catch {
       if (!controller.signal.aborted)
@@ -85,6 +88,15 @@ export default function Page() {
 
   return (
     <main className="milo-screen" aria-label="Talk to Milo">
+      <AccountMenu
+        messages={messages}
+        beforeOpen={async () => {
+          preflight.current?.abort();
+          preflight.current = null;
+          setChecking(false);
+          await live.end();
+        }}
+      />
       <Avatar
         state={
           live.speaking
