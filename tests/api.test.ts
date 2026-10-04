@@ -1,10 +1,14 @@
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, expect, it, vi } from "vitest";
 import { POST as session } from "../src/app/api/session/route";
 import { POST as chat } from "../src/app/api/chat/route";
 import { POST as plan } from "../src/app/api/plan/route";
 import { callOpenAI } from "../src/lib/server/openai";
 import { GET as status } from "../src/app/api/status/route";
 import { auth } from "../src/auth";
+import { getAppointmentStore } from "../src/lib/server/appointments";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 vi.mock("../src/auth", () => ({ auth: vi.fn() }));
 function request(
   path: string,
@@ -24,7 +28,16 @@ function request(
 const messages = [
   { id: "m1", role: "user", content: "My headaches keep coming back." },
 ];
+let directory: string;
+let store: ReturnType<typeof getAppointmentStore>;
+beforeAll(() => {
+  directory = mkdtempSync(join(tmpdir(), "ontuc-ai-api-"));
+  vi.stubEnv("APPOINTMENTS_DB_PATH", join(directory, "test.sqlite"));
+  store = getAppointmentStore();
+});
+afterAll(() => { store.close(); rmSync(directory, { recursive: true, force: true }); });
 beforeEach(() => {
+  vi.stubEnv("APPOINTMENTS_DB_PATH", join(directory, "test.sqlite"));
   vi.stubEnv("OPENAI_API_KEY", "test-key");
   vi.mocked(auth).mockResolvedValue({ user: { id: crypto.randomUUID(), email: "alex@example.test" }, expires: "2099-01-01" } as never);
 });

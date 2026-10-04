@@ -1,8 +1,12 @@
-# Appointment storage
+# User and appointment storage
 
 The appointment form and Milo save reservations and summaries in SQLite on the server. The default file is `/Users/kerven/Desktop/HealthMate/data/appointments.sqlite`; set `APPOINTMENTS_DB_PATH` in `.env.local` to use another server path and restart the web service. The file is created when the first authenticated appointment request reaches the server.
 
 The database lives outside the Next.js build directory, survives production rebuilds and server restarts, and is excluded from Git. Its folder and file use private local permissions. Moving this deployment to another computer requires transferring the database securely; Git alone does not transfer bookings.
+
+The same database contains a `users` table keyed by the verified Google subject. It stores Google name, email and profile-image URL, plus `created_at` and `last_seen_at` timestamps. Google sign-in creates or updates the profile; opening a protected platform page or using an authenticated API also adds existing sessions and updates their last-seen timestamp. Session reads fill missing fields without replacing a newer sign-in profile. Repeated use keeps one row and preserves the first-seen timestamp. Passwords, OAuth access/refresh tokens and session cookies are not stored in SQLite. The Profile panel's temporary name edits still last only for the current page session.
+
+Existing appointment owners receive identity-only rows during the schema upgrade, leaving their bookings intact. Their name, email and image are filled when they next use a verified session. Appointment `owner_id` joins to `users.id`; the Google subject remains the ownership boundary. User profiles have no public listing API. Include the whole database in backups to preserve both users and bookings.
 
 All appointment APIs require Google authentication. Records are owned by the verified Google subject from the server session. Client-supplied identity is checked only to reject a stale account action; it never determines the stored owner. Availability exposes occupied doctor/date/time values without patient identity or summaries. Writes validate the exact origin, bounded JSON and scheduling fields. Transactions and a unique doctor/date/time key prevent conflicting reservations; a repeated save by the same owner keeps its ID and does not erase a summary with an empty retry.
 

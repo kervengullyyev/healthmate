@@ -6,6 +6,7 @@ import { appointmentDay, appointmentInputSchema, storedAppointmentSchema, valida
 import { ApiError } from "./openai";
 
 const columns = "id, clinician_id AS clinicianId, date, time, description, 'booked' AS status, created_at AS createdAt";
+type UserProfile = { id: string; name?: string | null; email?: string | null; image?: string | null };
 export class AppointmentStore {
   private db: DatabaseSync;
   constructor(path: string) {
@@ -19,9 +20,25 @@ export class AppointmentStore {
         description TEXT NOT NULL, created_at TEXT NOT NULL,
         UNIQUE (clinician_id, date, time)
       );
-      CREATE INDEX IF NOT EXISTS appointments_owner ON appointments(owner_id);`);
+      CREATE INDEX IF NOT EXISTS appointments_owner ON appointments(owner_id);
+      CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY, name TEXT, email TEXT, image TEXT,
+        created_at TEXT NOT NULL, last_seen_at TEXT NOT NULL
+      );
+      INSERT OR IGNORE INTO users (id, created_at, last_seen_at)
+        SELECT owner_id, MIN(created_at), MAX(created_at) FROM appointments GROUP BY owner_id;`);
   }
   close() { this.db.close(); }
+  upsertUser(user: UserProfile, { refreshProfile = true }: { refreshProfile?: boolean } = {}) {
+    const now = new Date().toISOString();
+    this.db.prepare(`INSERT INTO users (id, name, email, image, created_at, last_seen_at)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET
+        name = COALESCE(${refreshProfile ? "excluded.name, users.name" : "users.name, excluded.name"}),
+        email = COALESCE(${refreshProfile ? "excluded.email, users.email" : "users.email, excluded.email"}),
+        image = COALESCE(${refreshProfile ? "excluded.image, users.image" : "users.image, excluded.image"}),
+        last_seen_at = excluded.last_seen_at`).run(user.id, user.name ?? null, user.email ?? null, user.image ?? null, now, now);
+  }
   list(owner: string): Appointment[] {
     return this.db.prepare(`SELECT ${columns} FROM appointments WHERE owner_id = ? ORDER BY date, time`).all(owner).map(row => storedAppointmentSchema.parse(row));
   }

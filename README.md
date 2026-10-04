@@ -2,7 +2,7 @@
 
 A hackathon health companion with a minimal main screen: Milo, one **Talk to Milo** button and a compact top-right account icon. Click to start voice; the same button cancels setup or ends the conversation. While Milo speaks, the supplied `public/videos/milo.webm` plays muted and loops continuously through speech pauses. User interruption stops it; response completion is inferred after two seconds of output silence, then the still avatar returns.
 
-The complete care-plan, sample appointment and editable doctor-brief journey remains available at `/journey`. The guided journey uses a fixed sample patient; the main appointment form and Milo save appointment reservations in SQLite.
+The complete care-plan, sample appointment and editable doctor-brief journey remains available at `/journey`. The guided journey uses a fixed sample patient; the main appointment form and Milo save appointment reservations in SQLite. Signed-in Google users are stored in the same database, linked to their appointments by Google ID.
 
 ## Run locally
 
@@ -48,7 +48,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-On 4 October 2026: 89 unit tests and 34 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified**; automated checks use mocked live audio and upstream calls, with actual browser playback of the supplied speaking video. A separate real Responses backend check passed the prepare → ask → consent → booking-tool sequence for a synthetic user request after urgent guidance; it did not exercise live speech. Real Google callback completion remains unverified until OAuth credentials are configured. See [verification evidence](docs/verification.md).
+On 4 October 2026: 97 unit tests and 34 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified**; automated checks use mocked live audio and upstream calls, with actual browser playback of the supplied speaking video. A separate real Responses backend check passed the prepare → ask → consent → booking-tool sequence for a synthetic user request after urgent guidance; it did not exercise live speech. Real Google callback completion remains unverified until OAuth credentials are configured. See [verification evidence](docs/verification.md).
 
 ## Prototype boundaries
 

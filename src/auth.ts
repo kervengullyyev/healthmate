@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import { getAppointmentStore } from "@/lib/server/appointments";
 
 export function googleSignInConfigured() {
   return Boolean(process.env.AUTH_SECRET?.trim() && process.env.AUTH_GOOGLE_ID?.trim() && process.env.AUTH_GOOGLE_SECRET?.trim());
@@ -15,7 +16,10 @@ export const { handlers, auth } = NextAuth({
       return account?.provider === "google" && profile?.email_verified === true && typeof profile.sub === "string";
     },
     jwt({ token, account }) {
-      if (account?.provider === "google") token.sub = account.providerAccountId;
+      if (account?.provider === "google") {
+        token.sub = account.providerAccountId;
+        getAppointmentStore().upsertUser({ id: account.providerAccountId, name: token.name, email: token.email, image: token.picture });
+      }
       return token;
     },
     session({ session, token }) {

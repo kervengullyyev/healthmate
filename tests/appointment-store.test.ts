@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { AppointmentStore } from "../src/lib/server/appointments";
 import { appointmentDay } from "../src/lib/demo-appointments";
+import { DatabaseSync } from "node:sqlite";
 
 let directory: string;
 let store: AppointmentStore;
@@ -47,4 +48,16 @@ it("imports browser history atomically and refuses another owner's occupied slot
   expect(store.list("alice")).toEqual([]);
   store.import("alice", [{ ...input(), date: appointmentDay(-1) }]);
   expect(store.list("alice")).toHaveLength(1);
+});
+it("adds user identities for existing appointment owners without changing their bookings", () => {
+  const saved = store.book("earlier-owner", input());
+  store.close();
+  const legacy = new DatabaseSync(join(directory, "appointments.sqlite"));
+  legacy.exec("DROP TABLE IF EXISTS users");
+  legacy.close();
+  store = new AppointmentStore(join(directory, "appointments.sqlite"));
+  const database = new DatabaseSync(join(directory, "appointments.sqlite"));
+  try { expect(database.prepare("SELECT id, email FROM users WHERE id = ?").get("earlier-owner")).toMatchObject({ id: "earlier-owner", email: null }); }
+  finally { database.close(); }
+  expect(store.list("earlier-owner")).toEqual([saved]);
 });

@@ -59,6 +59,8 @@ Automated checks exercise the Google authorization redirect and encrypted test s
 
 Sign-in requests only Google identity scopes: `openid`, `email`, and `profile`. It does not grant Calendar or Gmail access. Sessions use encrypted, HttpOnly cookies with a 24-hour lifetime.
 
+The verified Google ID, name, email and profile-image URL are persisted in the server SQLite `users` table, with first-seen and last-seen timestamps. Returning sign-ins update that row; existing sessions are added when they use the platform. OAuth tokens and passwords are not saved in the database.
+
 Appointments and summaries are stored in server SQLite, separated by verified Google account ID and shared across signed-in devices. External clinics are not notified. Earlier account-specific browser records are imported without deleting originals; anonymous entries remain unassigned. See [SQLite operations](sqlite-appointments.md). Conversation records stay in memory and clear on refresh, sign-out or account change.
 
 For the Cloudflare deployment at ontuc.com, register the additional exact redirect URI `https://ontuc.com/api/auth/callback/google` and use `AUTH_URL=https://ontuc.com` plus `APP_ORIGIN=https://ontuc.com` in `.env.local`. The public origin is already configured in this working copy. Restart the production service after adding credentials, as described in [tunnel operations](cloudflare-tunnel.md). The loopback callback remains useful for separate local development.
