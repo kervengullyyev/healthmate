@@ -201,7 +201,7 @@ test("Milo books the chosen slot after one confirmation and avoids duplicates", 
     (date) =>
       window.voiceTest.message(
         "assistant",
-        `Would you like me to book an appointment with Dr. Anna Kowalska on ${date} at 15:30?`,
+        `Would you like me to book an appointment with Dr. Anna Kowalska on ${new Intl.DateTimeFormat("en-US", { month: "long", day: "numeric" }).format(new Date(date + "T12:00:00"))} at 3:30 PM?`,
       ),
     date,
   );

@@ -9,6 +9,7 @@ import {
 import { clinicians } from "../demo";
 import type { TranscriptState } from "./events";
 import { bookAppointment, occupiedAppointments, importBrowserAppointments } from "../appointments-client";
+import { askedAboutAppointment, appointmentQuestion } from "./appointment-consent";
 
 export type AppointmentBackend = {
   occupied: typeof occupiedAppointments;
@@ -109,11 +110,12 @@ export function createAppointmentTools(userId?: string, backend = serverBackend,
     frontier: number;
     question: string;
   } | null = null;
-  const needsConfirmation = () => ({
+  const needsConfirmation = (reason = "inactive_proposal") => ({
     status: "needs_confirmation",
+    reason,
     question: pending?.question,
     message: pending
-      ? "Ask the exact returned appointment question as your final sentence, then wait for fresh clear agreement in the user's own words, such as yes, I confirm, sounds good, go ahead, or please book it for me. One clear agreement is enough; do not ask for an extra confirmation. Refusal, uncertainty or changes require clarification. Do not use consent to any other question."
+      ? `The booking has not been saved: ${reason === "spoken_slot_mismatch" ? "the latest spoken booking question did not clearly match the prepared doctor, date and time" : reason === "reply_mismatch" ? "the supplied reply did not match the latest user transcript" : reason === "unclear_reply" ? "the latest reply was not clear approval of this slot" : "fresh approval of the active proposal is not yet available"}. Present the returned doctor, date and time in one booking question, then wait for clear agreement in the user's own words. Dates and times may be spoken naturally. One clear agreement is enough. Respect refusal, uncertainty or changed preferences; do not use consent to another question or claim success.`
       : "No active appointment proposal. Do not book. Respect any refusal; prepare a new slot only if the user wants one.",
   });
   function observe(transcript: TranscriptState) {
@@ -145,7 +147,7 @@ export function createAppointmentTools(userId?: string, backend = serverBackend,
             0,
             ...transcript.fragments.map((part) => part.end),
           ),
-          question: `Would you like me to book an appointment with ${doctor.name} on ${input.date} at ${input.time}?`,
+          question: appointmentQuestion(input),
         };
         return {
           status: "awaiting_confirmation",
@@ -153,7 +155,7 @@ export function createAppointmentTools(userId?: string, backend = serverBackend,
           question: pending.question,
           appointment: { ...input, doctor: doctor.name },
           message:
-            "Read the exact returned question as the final sentence of your next reply, then wait for the user's answer. Do not ask another question or book until they reply.",
+            "Present the returned doctor, date and time in one booking question as the final sentence of your next reply, then wait for the user's answer. Dates and times may be spoken naturally. Do not ask another question or book until they reply.",
         };
       }
       if (name === "book_demo_appointment") {
@@ -171,19 +173,16 @@ export function createAppointmentTools(userId?: string, backend = serverBackend,
         const asked =
           assistant &&
           assistant.start > pending.frontier &&
-          normalise(assistant.text).endsWith(normalise(pending.question)) &&
+          askedAboutAppointment(assistant.text, pending.input) &&
           !transcript.fragments.some(
             (part) =>
               part.role === "user" &&
               part.start > assistant.end &&
               part.start < user.start,
           );
-        if (
-          !asked ||
-          normalise(argsResult.data.confirmation) !== normalise(user.text) ||
-          !affirmative(user.text)
-        )
-          return needsConfirmation();
+        if (!asked) return needsConfirmation("spoken_slot_mismatch");
+        if (normalise(argsResult.data.confirmation) !== normalise(user.text)) return needsConfirmation("reply_mismatch");
+        if (!affirmative(user.text)) return needsConfirmation("unclear_reply");
         const booking = await backend.book(pending.input, signal, userId);
         pending = null;
         return {

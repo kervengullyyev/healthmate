@@ -7,7 +7,7 @@ import {
 } from "../src/lib/demo-appointments";
 import { applyTranscript, emptyTranscript } from "../src/lib/live/events";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 it("can prepare a new appointment even if an earlier browser record cannot be imported", async () => {
   const tools = createAppointmentTools("google-owner", {
     initialise: async () => { throw new Error("A legacy slot is no longer available."); },
@@ -16,7 +16,7 @@ it("can prepare a new appointment even if an earlier browser record cannot be im
   });
   expect(await tools.run("prepare_demo_appointment", JSON.stringify({ clinicianId: null, date: null, time: null, description: "Checkup" }), emptyTranscript())).toMatchObject({ status: "awaiting_confirmation" });
 });
-async function scenario() {
+async function scenario(time: "15:30" | "16:00" | "17:15" = "15:30") {
   const saved = new Map<string, string>();
   vi.stubGlobal("localStorage", {
     getItem: (key: string) => saved.get(key) ?? null,
@@ -42,7 +42,7 @@ async function scenario() {
   const proposal = await run("prepare_demo_appointment", {
     clinicianId: "anna",
     date,
-    time: "15:30",
+    time,
   });
   return { say, run, proposal, date };
 }
@@ -105,6 +105,49 @@ it("accepts a natural affirmative reply to the specific appointment question", a
     }),
   ).toMatchObject({ status: "booked" });
   expect(readDemoAppointments()).toHaveLength(1);
+});
+it.each([
+  "Would you like me to book an appointment with Dr. Anna Kowalska on October 5th at 5:15 PM?",
+  "Would you like me to book an appointment with Dr Anna Kowalska on October 5 at 5:15 p.m.?",
+  "Would you like me to book an appointment with Doctor Anna Kowalska on 5 October 2026 at 17:15?",
+  "Would you like me to book an appointment with Dr. Anna Kowalska tomorrow at 5:15 PM?",
+  "There is a video appointment tomorrow with Dr. Anna Kowalska at 5:15 PM. Shall I book it for you?",
+  "The available appointment tomorrow is with Dr. Anna Kowalska at 5:15 PM. Would you like me to book an appointment with Dr. Anna Kowalska?",
+])("books after one agreement to a naturally spoken slot: %s", async question => {
+  vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-04T12:00:00.000Z"));
+  const { say, run, proposal } = await scenario("17:15");
+  say("assistant", question);
+  say("user", "Yes");
+  expect(await run("book_demo_appointment", { proposalId: proposal.proposalId, confirmation: "Yes" })).toMatchObject({ status: "booked" });
+  expect(readDemoAppointments()).toHaveLength(1);
+  expect(readDemoAppointments()[0]).toMatchObject({ date: "2026-10-05", time: "17:15", clinicianId: "anna" });
+});
+it.each([
+  "Would you like me to book an appointment with Dr. Piotr Nowak on October 5th at 5:15 PM?",
+  "Would you like me to book an appointment with Dr. Anna Kowalska on October 6th at 5:15 PM?",
+  "Would you like me to book an appointment with Dr. Anna Kowalska on October 5th 2027 at 5:15 PM?",
+  "Would you like me to book an appointment with Dr. Anna Kowalska on October 5th at 3:30 PM?",
+  "There is an appointment with Dr. Anna Kowalska tomorrow at 5:15 PM. Would you like a symptom summary instead?",
+  "Would you like me to book an appointment with Dr. Anna Kowalska tomorrow at 5:15 PM? Would you like a summary first?",
+  "There is an appointment with Dr. Anna Kowalska tomorrow at 5:15 PM. Would you like me to cancel it?",
+  "There was a slot with Dr. Anna Kowalska tomorrow at 5:15 PM, but now October 6th is available at 3:30 PM. Shall I book it?",
+  "Dr. Anna Kowalska is unavailable. Would you like me to book an appointment with Dr. Jane Smith on October 5th at 5:15 PM?",
+  "Dr. Anna Kowalska has October 5th at 5:15 PM available. Would you like me to book an appointment at 6 PM?",
+  "Would you like me to book an appointment with Dr. Anna Kowalska on October 5th at 5:15 PM, or should I cancel it?",
+  "Dr. Anna Kowalska has October 5th at 5:15 PM available. Would you like me to book an appointment with Jane Smith?",
+  "Dr. Anna Kowalska has October 5th at 5:15 PM available. Would you like me to book an appointment at noon?",
+  "Dr. Anna Kowalska has October 5th at 5:15 PM available. Would you like me to book an appointment on Tuesday?",
+  "Dr. Anna Kowalska has October 5th at 5:15 PM available. Would you like me to book an appointment at six PM?",
+  "Dr. Anna Kowalska has October 5th at 5:15 PM available. At noon, would you like me to book an appointment?",
+  "Dr. Anna Kowalska has October 5th at 5:15 PM available. Would you like me to book an appointment for October sixth?",
+  "Would you like me to book an appointment with Dr. Anna Kowalska on October 5th at 5:15 PM and at noon?",
+  "Dr. Anna Kowalska has October 5th at 5:15 PM available. Would you like me to book an appointment for the 6th?",
+])("does not mistake a different spoken slot or unrelated question for approval: %s", async question => {
+  vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-04T12:00:00.000Z"));
+  const { say, run, proposal } = await scenario("17:15");
+  say("assistant", question); say("user", "Yes");
+  expect(await run("book_demo_appointment", { proposalId: proposal.proposalId, confirmation: "Yes" })).toMatchObject({ status: "needs_confirmation" });
+  expect(readDemoAppointments()).toEqual([]);
 });
 it.each([
   "Sounds good!",
