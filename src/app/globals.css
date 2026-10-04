@@ -452,10 +452,6 @@ main {
   opacity: 0;
   background: #bdd6b0;
 }
-.avatar-speaking .avatar-orbit {
-  opacity: 0.6;
-  animation: halo 1s ease-in-out infinite;
-}
 .avatar-connecting .avatar-orbit {
   opacity: 0.5;
   animation: halo 2s infinite;
