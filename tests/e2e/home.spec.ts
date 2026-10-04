@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { fakeVoice } from "../helpers/fake-voice";
 
-test("keeps Milo centered with one voice action and a compact account icon", async ({ page }) => {
+test("keeps Milo centered with one voice action and a compact account icon", async ({
+  page,
+}) => {
   await page.goto("/");
   await expect(page.getByRole("img", { name: /Milo/ })).toBeVisible();
   await expect(
@@ -132,6 +134,49 @@ test("plays and loops Milo's video during speech, then returns to the still avat
           element.currentTime < 1 && !element.paused,
       ),
     )
+    .toBe(true);
+  await page.evaluate(() => {
+    window.voiceTest.speaking = false;
+  });
+  await video.evaluate(async (element: HTMLVideoElement) => {
+    element.dataset.pauses = "0";
+    element.addEventListener("pause", () => {
+      element.dataset.pauses = String(Number(element.dataset.pauses) + 1);
+    });
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+  });
+  expect(
+    await video.evaluate((element: HTMLVideoElement) => ({
+      paused: element.paused,
+      pauses: element.dataset.pauses,
+    })),
+  ).toEqual({ paused: false, pauses: "0" });
+  await page.evaluate(() => {
+    window.voiceTest.speaking = true;
+  });
+  await expect
+    .poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused))
+    .toBe(true);
+  await page.evaluate(() => {
+    window.voiceTest.userSpeaking = true;
+  });
+  await expect
+    .poll(() => video.evaluate((element: HTMLVideoElement) => element.paused), {
+      timeout: 1000,
+    })
+    .toBe(true);
+  await page.evaluate(() => {
+    window.voiceTest.userSpeaking = false;
+    window.voiceTest.speaking = false;
+  });
+  await video.evaluate(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+  });
+  await page.evaluate(() => {
+    window.voiceTest.speaking = true;
+  });
+  await expect
+    .poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused))
     .toBe(true);
   await page.evaluate(() => {
     window.voiceTest.speaking = false;

@@ -160,20 +160,70 @@ export function createLiveConnection(callbacks: Callbacks) {
   function monitor(stream: MediaStream) {
     if (typeof AudioContext === "undefined") return;
     try {
+      if (frame) cancelAnimationFrame(frame);
+      void context?.close();
       context = new AudioContext();
       const analyser = context.createAnalyser();
       analyser.fftSize = 256;
       context.createMediaStreamSource(stream).connect(analyser);
       const data = new Uint8Array(analyser.fftSize);
+      let input: AnalyserNode | null = null;
+      try {
+        if (microphone) {
+          input = context.createAnalyser();
+          input.fftSize = 256;
+          context.createMediaStreamSource(microphone).connect(input);
+        }
+      } catch {
+        /* Output tracking still works without microphone analysis. */
+      }
+      const inputData = new Uint8Array(256);
+      const rms = (samples: Uint8Array) =>
+        Math.sqrt(
+          samples.reduce((sum, value) => sum + ((value - 128) / 128) ** 2, 0) /
+            samples.length,
+        );
+      let lastOutput = -Infinity,
+        lastInput = -Infinity;
+      let inputOnset: number | null = null,
+        interrupted = false,
+        speaking = false;
+      function setSpeaking(value: boolean) {
+        if (value !== speaking) {
+          speaking = value;
+          callbacks.onSpeaking(value);
+        }
+      }
       const measure = () => {
         if (!active || !context) return;
+        if (closePromise) {
+          setSpeaking(false);
+          return;
+        }
+        const now = performance.now();
         analyser.getByteTimeDomainData(data);
-        callbacks.onSpeaking(
-          Math.sqrt(
-            data.reduce((sum, v) => sum + ((v - 128) / 128) ** 2, 0) /
-              data.length,
-          ) > 0.015,
-        );
+        const outputVoice = rms(data) > 0.015;
+        if (outputVoice) lastOutput = now;
+        input?.getByteTimeDomainData(inputData);
+        const inputVoice =
+          input &&
+          microphone?.getAudioTracks().some((track) => track.enabled) &&
+          rms(inputData) > 0.03;
+        if (inputVoice) {
+          lastInput = now;
+          inputOnset ??= now;
+          // Ignore short microphone spikes; sustained user speech interrupts.
+          if (now - inputOnset >= 100) interrupted = true;
+        } else inputOnset = null;
+        if (interrupted) {
+          setSpeaking(false);
+          // Wait for the old audio tail and the user to stop before rearming.
+          if (now - lastInput >= 300 && now - lastOutput >= 200)
+            interrupted = false;
+        } else if (outputVoice) setSpeaking(true);
+        // GPT-Live has no spoken-response-done event. Bridge natural pauses,
+        // and infer the end only after two seconds of continuous output silence.
+        else if (now - lastOutput >= 2000) setSpeaking(false);
         frame = requestAnimationFrame(measure);
       };
       measure();
@@ -340,6 +390,7 @@ export function createLiveConnection(callbacks: Callbacks) {
     });
   }
   async function end(): Promise<void> {
+    callbacks.onSpeaking(false);
     if (closePromise) return closePromise;
     if (!ready || !channel || channel.readyState !== "open") {
       cleanup();

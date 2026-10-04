@@ -19,18 +19,12 @@ export function Avatar({
       void element.play().catch(() => {
         if (!cancelled) setVideoPlaying(false);
       });
+    } else {
+      element.pause();
+      element.currentTime = 0;
     }
-    // Keep the animation continuous across small gaps between spoken words.
-    const pause =
-      state !== "speaking"
-        ? setTimeout(() => {
-            element.pause();
-            element.currentTime = 0;
-          }, 250)
-        : undefined;
     return () => {
       cancelled = true;
-      clearTimeout(pause);
     };
   }, [state]);
   useEffect(() => {
@@ -62,7 +56,13 @@ export function Avatar({
         preload="auto"
         disablePictureInPicture
         aria-hidden="true"
-        onPlaying={() => setVideoPlaying(true)}
+        onPlaying={(event) => {
+          if (state === "speaking") setVideoPlaying(true);
+          else {
+            event.currentTarget.pause();
+            event.currentTarget.currentTime = 0;
+          }
+        }}
         onPause={() => setVideoPlaying(false)}
         onError={() => setVideoPlaying(false)}
       />

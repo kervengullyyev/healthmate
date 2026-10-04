@@ -1,6 +1,6 @@
 # HealthMate
 
-A hackathon health companion with a minimal main screen: Milo, one **Talk to Milo** button and a compact top-right account icon. Click to start voice; the same button cancels setup or ends the conversation. While Milo speaks, the supplied `public/videos/milo.mp4` plays muted and loops for longer responses; the still avatar returns during silence.
+A hackathon health companion with a minimal main screen: Milo, one **Talk to Milo** button and a compact top-right account icon. Click to start voice; the same button cancels setup or ends the conversation. While Milo speaks, the supplied `public/videos/milo.mp4` plays muted and loops continuously through speech pauses. User interruption stops it; response completion is inferred after two seconds of output silence, then the still avatar returns.
 
 The complete care-plan, sample appointment and editable doctor-brief journey remains available at `/journey`. Clinicians and appointment slots are synthetic samples.
 

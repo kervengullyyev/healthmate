@@ -6,6 +6,7 @@ declare global {
       closed: boolean;
       closes: number;
       speaking: boolean;
+      userSpeaking: boolean;
       message: (role: "user" | "assistant", text: string) => void;
       tool: (name: string, args: unknown) => Promise<Record<string, unknown>>;
     };
@@ -28,6 +29,7 @@ export async function fakeVoice(
         closed: false,
         closes: 0,
         speaking: false,
+        userSpeaking: false,
         message: () => {},
         tool: async () => ({}),
       };
@@ -60,14 +62,22 @@ export async function fakeVoice(
         class AudioAnalysis {
           createAnalyser() {
             return {
+              input: false,
               fftSize: 256,
               getByteTimeDomainData(data: Uint8Array) {
-                data.fill(window.voiceTest.speaking ? 160 : 128);
+                const talking = this.input
+                  ? window.voiceTest.userSpeaking && track.enabled
+                  : window.voiceTest.speaking;
+                data.fill(talking ? 160 : 128);
               },
             };
           }
-          createMediaStreamSource() {
-            return { connect() {} };
+          createMediaStreamSource(source: unknown) {
+            return {
+              connect(analyser: { input: boolean }) {
+                analyser.input = source === stream;
+              },
+            };
           }
           async resume() {}
           async close() {}
