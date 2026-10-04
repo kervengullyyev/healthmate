@@ -168,3 +168,44 @@ it("unavailable localStorage does not prevent reading the empty appointment list
   expect(() => readDemoAppointments()).not.toThrow();
   expect(readDemoAppointments()).toEqual([]);
 });
+it("chooses a default demo slot when asked to arrange an appointment without preferences", () => {
+  const { say, run, date } = scenario();
+  say("user", "My stomach hurts very bad. Please take an appointment for me.");
+  say("assistant", "Please seek urgent medical care now. A demo appointment is not a substitute.");
+  const proposal = run("prepare_demo_appointment", {
+    clinicianId: null,
+    date: null,
+    time: null,
+    description: "Patient reports very bad stomach pain and requested a demo appointment. Urgent evaluation was advised.",
+  });
+  expect(proposal).toMatchObject({
+    status: "awaiting_confirmation",
+    appointment: { clinicianId: "anna", date, time: "15:30" },
+  });
+  expect(readDemoAppointments()).toEqual([]);
+  say("assistant", proposal.question as string);
+  say("user", "Please book it for me.");
+  expect(run("book_demo_appointment", {
+    proposalId: proposal.proposalId,
+    confirmation: "Please book it for me.",
+  })).toMatchObject({ status: "booked" });
+  expect(readDemoAppointments()[0]).toMatchObject({
+    clinicianId: "anna", date, time: "15:30",
+    description: "Patient reports very bad stomach pain and requested a demo appointment. Urgent evaluation was advised.",
+  });
+  expect(run("prepare_demo_appointment", {
+    clinicianId: null, date: null, time: null, description: "Another checkup",
+  })).toMatchObject({
+    appointment: { clinicianId: "anna", date, time: "16:00" },
+  });
+});
+it("keeps supplied preferences and rejects unavailable slots instead of silently replacing them", () => {
+  const { run, date } = scenario();
+  expect(run("prepare_demo_appointment", {
+    clinicianId: "maya", date, time: "17:15", description: "Checkup",
+  })).toMatchObject({ appointment: { clinicianId: "maya", date, time: "17:15" } });
+  expect(run("prepare_demo_appointment", {
+    clinicianId: "maya", date, time: "09:00", description: "Checkup",
+  })).toMatchObject({ status: "error" });
+  expect(readDemoAppointments()).toEqual([]);
+});

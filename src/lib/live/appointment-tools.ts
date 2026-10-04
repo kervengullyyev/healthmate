@@ -1,6 +1,10 @@
 import { z } from "zod";
 import {
   bookDemoAppointment,
+  appointmentDay,
+  appointmentInputSchema,
+  appointmentTimes,
+  readDemoAppointments,
   validateAppointment,
   type AppointmentInput,
 } from "../demo-appointments";
@@ -13,6 +17,29 @@ const confirmationSchema = z
     confirmation: z.string().min(1).max(200),
   })
   .strict();
+const preparationSchema = appointmentInputSchema.extend({
+  clinicianId: appointmentInputSchema.shape.clinicianId.nullish(),
+  date: appointmentInputSchema.shape.date.nullish(),
+  time: appointmentInputSchema.shape.time.nullish(),
+});
+function chooseAppointment(args: unknown): AppointmentInput {
+  const requested = preparationSchema.parse(args);
+  const clinicianId = requested.clinicianId ?? "anna";
+  const dates = requested.date
+    ? [requested.date]
+    : Array.from({ length: 30 }, (_, index) => appointmentDay(index + 1));
+  const times = requested.time ? [requested.time] : appointmentTimes;
+  const existing = readDemoAppointments();
+  for (const date of dates)
+    for (const time of times) {
+      if (
+        (!requested.date || !requested.time) &&
+        existing.some((item) => item.clinicianId === clinicianId && item.date === date && item.time === time)
+      ) continue;
+      return validateAppointment({ ...requested, clinicianId, date, time });
+    }
+  throw new Error("No demo slots are available for those preferences. Choose another date or doctor.");
+}
 function normalise(text: string) {
   return text
     .toLowerCase()
@@ -96,7 +123,7 @@ export function createAppointmentTools() {
     try {
       const args: unknown = JSON.parse(raw);
       if (name === "prepare_demo_appointment") {
-        const input = validateAppointment(args);
+        const input = chooseAppointment(args);
         const doctor = clinicians.find(
           (clinician) => clinician.id === input.clinicianId,
         )!;

@@ -110,7 +110,7 @@ test("a storage failure reports the error instead of claiming a booking", async 
   );
 });
 
-test("Milo saves natural-language agreement after asking and avoids duplicate bookings", async ({
+test("Milo chooses a demo slot after urgent advice, saves agreement and avoids duplicates", async ({
   page,
 }) => {
   await voice(page);
@@ -118,21 +118,22 @@ test("Milo saves natural-language agreement after asking and avoids duplicate bo
   await page.evaluate(() =>
     window.voiceTest.message(
       "user",
-      "My headaches keep returning. I would like a doctor.",
+      "My stomach hurts very bad. Please take an appointment for me.",
     ),
   );
+  await page.evaluate(() => window.voiceTest.message("assistant", "Please seek urgent medical care now. A demo booking does not replace urgent care."));
   const proposal = await page.evaluate(
-    (date) =>
+    () =>
       window.voiceTest.tool("prepare_demo_appointment", {
-        clinicianId: "anna",
-        date,
-        time: "15:30",
+        clinicianId: null,
+        date: null,
+        time: null,
         description:
-          "Patient reports recurring headaches and wants a routine GP consultation. Cause is unknown.",
+          "Patient reports very bad stomach pain and requested a demo appointment. Urgent evaluation was advised.",
       }),
-    date,
   );
   expect(proposal.status).toBe("awaiting_confirmation");
+  expect(proposal.appointment).toMatchObject({ clinicianId: "anna", date, time: "15:30" });
   expect(
     await page.evaluate(() =>
       localStorage.getItem("healthmate-demo-appointments"),
@@ -168,7 +169,7 @@ test("Milo saves natural-language agreement after asking and avoids duplicate bo
   await expect(panel).toContainText("Dr. Anna Kowalska");
   await expect(panel).toContainText("15:30");
   await expect(panel).toContainText(
-    "Patient reports recurring headaches and wants a routine GP consultation. Cause is unknown.",
+    "Patient reports very bad stomach pain and requested a demo appointment. Urgent evaluation was advised.",
   );
   await expect(panel.getByRole("listitem")).toHaveCount(1);
 });

@@ -6,21 +6,22 @@ export const appointmentTools = [
     type: "function",
     name: "prepare_demo_appointment",
     description:
-      "Prepare a specific demo appointment for user approval. Does not book. Use only for non-urgent routine consultations, before asking the user whether to book this slot.",
+      "Prepare a demo appointment when the user requests one or accepts an offer. Does not book. Send null for any unspecified doctor, date or time; the app chooses the next available demo slot. Urgent-care advice must come first, but an explicit request for a demo booking may still be handled separately. The demo is never a substitute for urgent care.",
     strict: true,
     parameters: {
       type: "object",
       properties: {
         clinicianId: {
-          type: "string",
-          enum: clinicians.map((doctor) => doctor.id),
+          type: ["string", "null"],
+          enum: [...clinicians.map((doctor) => doctor.id), null],
+          description: "Preferred doctor, or null to let the app choose.",
         },
         date: {
-          type: "string",
+          type: ["string", "null"],
           description:
-            "Local calendar date YYYY-MM-DD, within the next 30 days.",
+            "Preferred local calendar date YYYY-MM-DD within the next 30 days, or null to choose the next available date.",
         },
-        time: { type: "string", enum: [...appointmentTimes] },
+        time: { type: ["string", "null"], enum: [...appointmentTimes, null], description: "Preferred time, or null to choose an available time." },
         description: {
           type: "string",
           maxLength: 1500,
@@ -36,7 +37,7 @@ export const appointmentTools = [
     type: "function",
     name: "book_demo_appointment",
     description:
-      "Save a previously prepared demo appointment ONLY after asking about that specific slot and receiving fresh clear agreement in natural language, such as sounds good, go ahead, or please book it for me. Do not require the literal words yes or OK. Never call for refusal, uncertainty, conditions, slot changes, urgent symptoms or unrelated agreement. Return the real tool result before saying booked.",
+      "Save a previously prepared demo appointment ONLY after asking about that specific slot and receiving fresh clear agreement in natural language, such as sounds good, go ahead, or please book it for me. Do not require the literal words yes or OK. Never call for refusal, uncertainty, conditions, slot changes or unrelated agreement. A user-requested demo booking can be saved after urgent-care guidance; it never replaces urgent care. Return the real tool result before saying booked.",
     strict: true,
     parameters: {
       type: "object",
@@ -59,5 +60,5 @@ export const appointmentTools = [
 ];
 export function appointmentInstructions() {
   return `DEMO APPOINTMENTS: Today is ${appointmentDay()}. Available fictional doctors: ${clinicians.map((doctor) => `${doctor.id}: ${doctor.name} (${doctor.format})`).join("; ")}. Any date from ${appointmentDay(1)} through ${appointmentDay(30)} and time ${appointmentTimes.join(", ")} is available in this demo. Never invent another doctor or time.
-When a routine professional consultation is appropriate, offer to arrange a demo appointment. Choose or collect a preferred doctor, date and time. Include a concise description summarising only what the patient reported, with corrections and unknowns preserved. Never invent a diagnosis, treatment or missing history. Briefly explain the summary you will include before the exact confirmation question, so the user can correct it. Call prepare_demo_appointment BEFORE asking approval for a specific slot. Read the exact question returned by the tool as the final sentence of the next spoken reply. This question names the doctor, date and time and states that this is a demo appointment. Do not append an unrelated question. Then WAIT for a new user response. Do not interpret prior or unrelated agreement as consent. If they decline or are uncertain, do not book. If they change the slot, prepare the new slot and ask again. Recognise clear natural agreement such as sounds good, that works for me, go ahead, or please book it for me. Do not demand literal yes or OK, and preserve the full reply in confirmation. Conditions, uncertainty, refusal or a changed slot require clarification rather than booking. After a clear affirmative answer, call book_demo_appointment with the returned proposalId and exact user confirmation. The app verifies consent and saves the booking. Say it is booked ONLY when the tool returns status booked; it will appear under Appointments. On error or needs_confirmation, explain or ask for confirmation; never pretend success. Do not call tools to book urgent-care presentations. Urgent guidance takes priority. The description is saved with the demo appointment and appears in the Appointments menu. Keep it short and relevant; doctor/date/time fields must contain only scheduling values. No clinic receives this demo booking or summary.`;
+When a routine professional consultation is appropriate, offer to arrange a demo appointment. When the user asks for an appointment, proceed to preparation without requiring a full symptom interview. Use any preferences they already gave. Send null for missing doctor, date or time so the app selects Dr. Anna by default and the earliest available demo slot; do not insist they choose every field. Explain the returned doctor, date and time before asking approval. Include a concise description summarising only what the patient reported, with corrections and unknowns preserved. Never invent a diagnosis, treatment or missing history. Briefly explain the summary you will include before the exact confirmation question, so the user can correct it. Call prepare_demo_appointment BEFORE asking approval for a specific slot. Read the exact question returned by the tool as the final sentence of the next spoken reply. This question names the doctor, date and time and states that this is a demo appointment. Do not append an unrelated question. Then WAIT for a new user response. Do not interpret prior or unrelated agreement as consent. If they decline or are uncertain, do not book. If they change the slot, prepare the new slot and ask again. Recognise clear natural agreement such as sounds good, that works for me, go ahead, or please book it for me. Do not demand literal yes or OK, and preserve the full reply in confirmation. Conditions, uncertainty, refusal or a changed slot require clarification rather than booking. After a clear affirmative answer, call book_demo_appointment with the returned proposalId and exact user confirmation. The app verifies consent and saves the booking. Say it is booked ONLY when the tool returns status booked; it will appear under Appointments. On error or needs_confirmation, explain or ask for confirmation; never pretend success. Urgent guidance takes priority and must be delivered immediately. Do not proactively offer a routine appointment instead of urgent care. If the user explicitly asks to arrange a demo appointment, you may prepare and save it with the same confirmation process after giving urgent guidance. Do not refuse that administrative demo request solely because symptoms are urgent. Clearly say the demo booking does not replace or delay urgent care, and include that advice in the description. The description is saved with the demo appointment and appears in the Appointments menu. Keep it short and relevant; doctor/date/time fields must contain only scheduling values. No clinic receives this demo booking or summary.`;
 }
