@@ -26,7 +26,7 @@ const messages = [
 ];
 beforeEach(() => {
   vi.stubEnv("OPENAI_API_KEY", "test-key");
-  vi.mocked(auth).mockResolvedValue({ user: { id: "google-test-user", email: "alex@example.test" }, expires: "2099-01-01" } as never);
+  vi.mocked(auth).mockResolvedValue({ user: { id: crypto.randomUUID(), email: "alex@example.test" }, expires: "2099-01-01" } as never);
 });
 it("rejects signed-out users at each AI handler before reading data or calling OpenAI", async () => {
   vi.mocked(auth).mockResolvedValue(null as never);
@@ -174,5 +174,45 @@ it("rejects an untrusted host even when its Origin matches", async () => {
     body: JSON.stringify({ sdp: "v=0\r\n" }),
   });
   expect((await session(r)).status).toBe(403);
+  expect(upstream).not.toHaveBeenCalled();
+});
+
+it("accepts the configured HTTPS origin through a loopback tunnel", async () => {
+  vi.stubEnv("APP_ORIGIN", "https://ontuc.com");
+  const r = new Request("http://localhost:3000/api/plan", {
+    method: "POST",
+    headers: { host: "ontuc.com", origin: "https://ontuc.com", "Content-Type": "application/json" },
+    body: JSON.stringify({ messages: [] }),
+  });
+  expect((await plan(r)).status).toBe(400);
+});
+it.each([
+  { host: "ontuc.com", origin: "https://other.example", forwarded: "ontuc.com" },
+  { host: "other.example", origin: "https://ontuc.com", forwarded: "ontuc.com" },
+  { host: "ontuc.com", origin: "http://ontuc.com", forwarded: "ontuc.com" },
+  { host: "other.example@ontuc.com", origin: "https://ontuc.com", forwarded: "ontuc.com" },
+  { host: "ontuc.com/path", origin: "https://ontuc.com", forwarded: "ontuc.com" },
+  { host: "ontuc.com:80", origin: "https://ontuc.com", forwarded: "ontuc.com" },
+  { host: "ontuc.com:443", origin: "https://ontuc.com", forwarded: "ontuc.com" },
+])("rejects mismatched public origins and forwarded-host spoofing: %j", async ({ host, origin, forwarded }) => {
+  vi.stubEnv("APP_ORIGIN", "https://ontuc.com");
+  const upstream = vi.fn();
+  vi.stubGlobal("fetch", upstream);
+  const r = new Request("http://localhost:3000/api/session", {
+    method: "POST",
+    headers: { host, origin, "x-forwarded-host": forwarded, "Content-Type": "application/json" },
+    body: JSON.stringify({ sdp: "v=0\r\n" }),
+  });
+  expect((await session(r)).status).toBe(403);
+  expect(upstream).not.toHaveBeenCalled();
+});
+
+it("limits an authenticated account even when forwarded IP headers change", async () => {
+  const upstream = vi.fn();
+  vi.stubGlobal("fetch", upstream);
+  // Malformed bodies consume the budget without making a paid request.
+  for (let i = 0; i < 30; i++)
+    expect((await plan(request("plan", { messages: [] }))).status).toBe(400);
+  expect((await session(request("session", { sdp: "v=0\r\n" }))).status).toBe(429);
   expect(upstream).not.toHaveBeenCalled();
 });

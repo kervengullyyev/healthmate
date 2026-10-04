@@ -11,16 +11,23 @@ export const sessionBody = z
 export async function readBody<T>(
   request: Request,
   schema: z.ZodType<T>,
+  accountId: string,
 ): Promise<T> {
   const url = new URL(request.url);
-  // Next can normalize request.url to localhost; Host retains the address
-  // used by this directly bound local browser. Do not trust forwarded hosts.
-  const expectedOrigin = `${url.protocol}//${request.headers.get("host") || url.host}`;
-  const externalHost = new URL(expectedOrigin).hostname;
-  if (
-    !["localhost", "127.0.0.1", "[::1]"].includes(externalHost) ||
-    request.headers.get("origin") !== expectedOrigin
-  )
+  // Use the actual Host, never a forwarded host supplied by a caller.
+  const actualHost = request.headers.get("host") || url.host;
+  const expectedOrigin = `${url.protocol}//${actualHost}`;
+  const hostname = new URL(expectedOrigin).hostname;
+  const origin = request.headers.get("origin");
+  const localAllowed = ["localhost", "127.0.0.1", "[::1]"].includes(hostname) && origin === expectedOrigin;
+  let publicAllowed = false;
+  try {
+    const configured = process.env.APP_ORIGIN?.trim();
+    const publicUrl = new URL(configured ?? "");
+    publicAllowed = publicUrl.protocol === "https:" && publicUrl.origin === configured &&
+      publicUrl.host === actualHost && origin === publicUrl.origin;
+  } catch { /* Missing or invalid public configuration stays closed. */ }
+  if (!localAllowed && !publicAllowed)
     throw new ApiError(
       403,
       "Unexpected request origin. Open ontuc directly and try again.",
@@ -30,7 +37,8 @@ export async function readBody<T>(
   const now = Date.now();
   for (const [key, window] of windows)
     if (window.until < now) windows.delete(key);
-  const key = request.headers.get("x-forwarded-for")?.split(",")[0] || "local";
+  // Use verified identity; proxy headers can contain caller-controlled values.
+  const key = accountId;
   const window = windows.get(key) ?? { count: 0, until: now + 60000 };
   if (++window.count > 30 || windows.size > 1000)
     throw new ApiError(429, "Too many requests. Wait a minute and try again.");

@@ -4,8 +4,8 @@ import { chatBody, errorResponse, readBody } from "@/lib/server/requests";
 export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
-    await requireUser();
-    const { messages } = await readBody(request, chatBody);
+    const user = await requireUser();
+    const { messages } = await readBody(request, chatBody, user.id);
     return Response.json(
       { reply: await getAssistantReply(messages) },
       { headers: { "Cache-Control": "no-store" } },

@@ -61,4 +61,4 @@ Sign-in requests only Google identity scopes: `openid`, `email`, and `profile`. 
 
 Appointments remain synthetic entries stored in the current browser, separated by Google account ID; they are not synchronized between devices or sent to a clinic. Earlier anonymous entries remain in browser storage and are not assigned to a signed-in account. Conversation records stay in memory and clear on refresh, sign-out or account change.
 
-For a future HTTPS deployment, create the corresponding HTTPS callback and update `AUTH_URL`. The current AI endpoint origin/rate-limit settings are designed for the local prototype; deployment is outside this change.
+For the Cloudflare deployment at ontuc.com, register the additional exact redirect URI `https://ontuc.com/api/auth/callback/google` and use `AUTH_URL=https://ontuc.com` plus `APP_ORIGIN=https://ontuc.com` in `.env.local`. The public origin is already configured in this working copy. Restart the production service after adding credentials, as described in [tunnel operations](cloudflare-tunnel.md). The loopback callback remains useful for separate local development.

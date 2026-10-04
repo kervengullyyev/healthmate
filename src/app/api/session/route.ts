@@ -9,8 +9,8 @@ const handshake = z.object({
 });
 export async function POST(request: Request) {
   try {
-    await requireUser();
-    const { sdp } = await readBody(request, sessionBody);
+    const user = await requireUser();
+    const { sdp } = await readBody(request, sessionBody, user.id);
     const result = handshake.safeParse(
       await callOpenAI("/live/sessions", {
         session: getLiveConfig(),
