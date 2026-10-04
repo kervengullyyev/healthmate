@@ -12,6 +12,8 @@ All appointment APIs require Google authentication. Records are owned by the ver
 
 Milo first prepares an available slot, asks the exact doctor/date/time question, and waits for fresh conversational agreement. The tool awaits the database result before claiming success. Refusal, uncertainty, changed slots, stale consent, failed writes and unavailable slots cannot produce a success confirmation. Ending a voice session aborts its pending requests and prevents late results reaching a restarted call.
 
+One clear agreement is sufficient, including “yes,” “yes, I confirm,” “I agree,” “confirmed,” “sounds good,” or “go ahead.” Milo is instructed to save the prepared appointment immediately after that reply, without asking again or preparing the same slot again. Conditions, changed details or refusal still require clarification. End an existing voice call and start a new one after deploying instruction changes so the new session receives them.
+
 The Appointments menu loads server records across devices. On first use, the current account's earlier browser records are imported as one transaction. Original browser entries are preserved. A conflicting or failed import produces a notice in Appointments while server listing and new bookings remain available. Anonymous legacy records are never assigned automatically to a Google account. The separate fixed guided journey retains its illustrative booking in its original browser namespace.
 
 These are reservations in ontuc's database. No external clinic is notified, and the directory still contains the original example doctors. External clinic delivery and real clinic inventory require a clinic connection and supplied doctor data.

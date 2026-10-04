@@ -168,7 +168,7 @@ test("a server storage failure reports the error instead of claiming a booking",
   );
 });
 
-test("Milo chooses a demo slot after urgent advice, saves agreement and avoids duplicates", async ({
+test("Milo books the chosen slot after one confirmation and avoids duplicates", async ({
   page,
 }) => {
   await voice(page);
@@ -205,12 +205,12 @@ test("Milo chooses a demo slot after urgent advice, saves agreement and avoids d
       ),
     date,
   );
-  await page.evaluate(() => window.voiceTest.message("user", "Sounds good, please book it for me."));
+  await page.evaluate(() => window.voiceTest.message("user", "Yes, I confirm."));
   const booked = await page.evaluate(
     (proposalId) =>
       window.voiceTest.tool("book_demo_appointment", {
         proposalId,
-        confirmation: "Sounds good, please book it for me.",
+        confirmation: "Yes, I confirm.",
       }),
     proposal.proposalId,
   );
@@ -219,7 +219,7 @@ test("Milo chooses a demo slot after urgent advice, saves agreement and avoids d
     (proposalId) =>
       window.voiceTest.tool("book_demo_appointment", {
         proposalId,
-        confirmation: "Sounds good, please book it for me.",
+        confirmation: "Yes, I confirm.",
       }),
     proposal.proposalId,
   );

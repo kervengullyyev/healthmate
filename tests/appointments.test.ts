@@ -119,6 +119,16 @@ it.each([
   "Absolutely, thank you.",
   "Okay, please do.",
   "Yes please, that’s fine.",
+  "Yes, I confirm.",
+  "I confirm.",
+  "Yes, I confirm the appointment.",
+  "I confirm that, thanks.",
+  "Confirmed.",
+  "Yes, I agree.",
+  "I agree to that.",
+  "Yes, that's correct.",
+  "Sure, do it.",
+  "Yes, please proceed.",
 ])("books the confirmed slot after conversational agreement: %s", async (reply) => {
   const { say, run, proposal } = await scenario();
   say("assistant", proposal.question as string);
@@ -140,6 +150,10 @@ it.each([
   "Yes, I have headaches.",
   "Not now, thanks.",
   "Can you tell me more first?",
+  "Yes, I confirm if it is free.",
+  "I confirm, but not tomorrow.",
+  "I don't confirm.",
+  "I agree, maybe.",
 ])("does not book after refusal, uncertainty or a change: %s", async (reply) => {
   const { say, run, proposal } = await scenario();
   say("assistant", proposal.question as string);

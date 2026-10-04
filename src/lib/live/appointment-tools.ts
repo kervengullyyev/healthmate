@@ -61,8 +61,10 @@ const agreement = [
   "yes|yeah|yep|yup|ok|okay|sure|alright|absolutely|certainly|of course",
   "(?:(?:that|it|this) )?(?:sounds|looks) (?:good|great|fine|perfect)(?: to me)?",
   "(?:that|it|this) works(?: for me)?",
-  "(?:that's|that is|it's|it is) (?:fine|good|great|perfect|okay|ok)(?: with me)?",
-  "go ahead|please do|let's do it|(?:i'd|i would) like that",
+  "(?:that's|that is|it's|it is) (?:fine|good|great|perfect|okay|ok|correct|right)(?: with me)?",
+  "(?:i )?confirm(?: (?:it|that|this|(?:the|my) (?:appointment|booking|slot)))?|confirmed",
+  "(?:i )?agree(?: (?:to|with) (?:it|that|this|the (?:appointment|booking|slot)))?",
+  "go ahead|please do|do it|proceed|let's do it|(?:i'd|i would) like that",
   "(?:(?:can|could|would) you )?(?:book|schedule|arrange|make|take) (?:it|that|this|(?:the|an|a) (?:demo )?appointment|the booking)(?: for me)?",
 ].join("|");
 // Match the entire reply, including combined agreement and polite fillers.
@@ -111,7 +113,7 @@ export function createAppointmentTools(userId?: string, backend = serverBackend,
     status: "needs_confirmation",
     question: pending?.question,
     message: pending
-      ? "Ask the exact returned appointment question as your final sentence, then wait for fresh clear agreement in the user's own words, such as sounds good, go ahead, or please book it for me. Refusal, uncertainty or changes require clarification. Do not use consent to any other question."
+      ? "Ask the exact returned appointment question as your final sentence, then wait for fresh clear agreement in the user's own words, such as yes, I confirm, sounds good, go ahead, or please book it for me. One clear agreement is enough; do not ask for an extra confirmation. Refusal, uncertainty or changes require clarification. Do not use consent to any other question."
       : "No active appointment proposal. Do not book. Respect any refusal; prepare a new slot only if the user wants one.",
   });
   function observe(transcript: TranscriptState) {
