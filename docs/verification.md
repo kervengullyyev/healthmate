@@ -9,3 +9,5 @@ Verified locally on Node.js 22, macOS and Chromium.
 - Live account-backed microphone/audio, interruption handling and real captions: unverified pending a configured project API key. Mocked tests verify the protocol and resource lifecycle, not actual model audio.
 
 The app runs locally at http://127.0.0.1:3000. It has not been deployed or connected to real clinics.
+
+Saved visual evidence: [desktop home](screenshots/home-desktop.png), [mobile doctor brief](screenshots/brief-mobile.png), [focused print layout](screenshots/brief-print.png). These contain only synthetic demo data.
