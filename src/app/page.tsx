@@ -17,6 +17,7 @@ import {
 } from "@/lib/domain";
 import { clinicians, demoAnswers, demoPlan, getDemoReply } from "@/lib/demo";
 import { useLive } from "@/hooks/use-live";
+import { canAddExchange, shouldFinishVoice } from "@/lib/conversation-budget";
 const bookingKey = "healthmate-demo-booking";
 export default function Page() {
   const [state, dispatch] = useReducer(sessionReducer, "live", createSession);
@@ -27,12 +28,25 @@ export default function Page() {
     voiceOwner = useRef(-1),
     busy = useRef(false),
     request = useRef<AbortController | null>(null);
+  const voiceEnd = useRef<(() => Promise<void>) | null>(null);
+  const voiceBudgetEnded = useRef(false);
   const previousScreen = useRef(state.screen);
   const onTranscript = useCallback((messages: Message[]) => {
-    if (voiceOwner.current === epoch.current)
+    if (voiceOwner.current === epoch.current) {
       dispatch({ type: "transcript", messages });
+      if (!voiceBudgetEnded.current && shouldFinishVoice(messages)) {
+        voiceBudgetEnded.current = true;
+        setError(
+          "Interview limit reached. Finishing voice and preserving final captions. Then create your care plan or start fresh.",
+        );
+        void voiceEnd.current?.();
+      }
+    }
   }, []);
   const live = useLive(onTranscript);
+  useEffect(() => {
+    voiceEnd.current = live.end;
+  }, [live.end]);
   useEffect(() => {
     const controller = new AbortController();
     fetch("/api/status", { signal: controller.signal })
@@ -42,7 +56,8 @@ export default function Page() {
     return () => controller.abort();
   }, []);
   useEffect(() => {
-    if (previousScreen.current !== state.screen) document.getElementById("main")?.focus();
+    if (previousScreen.current !== state.screen)
+      document.getElementById("main")?.focus();
     previousScreen.current = state.screen;
   }, [state.screen]);
   useEffect(
@@ -94,6 +109,7 @@ export default function Page() {
       }
     }
     if (voice) {
+      voiceBudgetEnded.current = false;
       voiceOwner.current = token;
       try {
         const response = await fetch("/api/status");
@@ -125,6 +141,12 @@ export default function Page() {
   }
   async function send(text: string) {
     if (busy.current || active || state.mode === "demo") return;
+    if (!canAddExchange(state.messages, text)) {
+      setError(
+        "Interview limit reached. Your history is preserved. Create your care plan or start fresh.",
+      );
+      return;
+    }
     const message: Message = {
       id: crypto.randomUUID(),
       role: "user",
@@ -247,8 +269,19 @@ export default function Page() {
       }
     }
   }
-  function navigate(screen: Screen) {
+  async function navigate(screen: Screen) {
     if (screen === "appointments" && state.plan?.urgency === "urgent") return;
+    if (state.screen === "conversation" && screen !== "conversation") {
+      const ownsVoice = voiceOwner.current === epoch.current;
+      cancelRequests();
+      const token = epoch.current;
+      // Invalidate pending startup while accepting the active call's final
+      // captions until its graceful close completes.
+      if (ownsVoice) voiceOwner.current = token;
+      await live.end();
+      if (token !== epoch.current) return;
+      voiceOwner.current = -1;
+    }
     dispatch({ type: "screen", screen });
   }
   function confirm(booking: Booking) {

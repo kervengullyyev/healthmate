@@ -1,4 +1,11 @@
-import { Download, Printer, FileText, RefreshCw, Check } from "lucide-react";
+import {
+  Download,
+  Printer,
+  FileText,
+  RefreshCw,
+  Check,
+  AlertTriangle,
+} from "lucide-react";
 import type { Booking, CarePlan, Mode } from "@/lib/domain";
 import { clinicians } from "@/lib/demo";
 export function DoctorBrief({
@@ -17,11 +24,24 @@ export function DoctorBrief({
   onReplace: () => void;
 }) {
   const doctor = clinicians.find((c) => c.id === booking?.clinicianId);
-  const appointment =
-    booking && doctor
+  const urgent = plan.urgency === "urgent";
+  const careLevel = urgent
+    ? "URGENT EVALUATION"
+    : plan.urgency === "consultation"
+      ? "CONSULTATION"
+      : "SELF-CARE GUIDANCE";
+  const urgentGuidance =
+    "For immediate danger, contact local emergency services. Don’t wait for a routine appointment.";
+  const draftNotice = urgent
+    ? "Earlier routine-care advice in the editable draft is superseded by the latest urgent guidance. Patient edits are preserved; review them before sharing."
+    : "Editable draft: review any earlier advice against the latest suggested care above.";
+  const latestCare = `LATEST SUGGESTED CARE: ${careLevel}\n${plan.reason}\n${plan.nextSteps.map((step) => `- ${step}`).join("\n")}${urgent ? `\n${urgentGuidance}` : ""}`;
+  const appointment = urgent
+    ? "ROUTINE APPOINTMENT FLOW PAUSED\nAny earlier sample slot is not a substitute for urgent professional evaluation."
+    : booking && doctor
       ? `SAMPLE APPOINTMENT — NO REAL BOOKING\n${doctor.name}\n${booking.slot}`
       : "APPOINTMENT\nNo appointment booked.";
-  const fullBrief = `HEALTHMATE — DOCTOR BRIEF\n${mode === "demo" ? "SYNTHETIC DEMONSTRATION\n" : ""}\nPATIENT-REVIEWED CONCERN\n${plan.concern}\n\n${brief}\n\n${appointment}\n\nPrepared with AI assistance. Patient statements and AI suggestions require clinician review.`;
+  const fullBrief = `HEALTHMATE — DOCTOR BRIEF\n${mode === "demo" ? "SYNTHETIC DEMONSTRATION\n" : ""}\nPATIENT-REVIEWED CONCERN\n${plan.concern}\n\n${latestCare}\n\n${draftNotice}\n\nEDITABLE DRAFT\n${brief}\n\n${appointment}\n\nPrepared with AI assistance. Patient statements and AI suggestions require clinician review.`;
   function download() {
     const url = URL.createObjectURL(
       new Blob([fullBrief], { type: "text/plain;charset=utf-8" }),
@@ -42,6 +62,27 @@ export function DoctorBrief({
         </div>
         <span className="step-pill">Step 04 of 04</span>
       </div>
+      <section className={`care-summary ${urgent ? "urgent-summary" : ""}`}>
+        <span className={`summary-icon ${urgent ? "danger" : "mint"}`}>
+          {urgent ? <AlertTriangle size={25} /> : <FileText size={25} />}
+        </span>
+        <div>
+          <span className="eyebrow">LATEST SUGGESTED CARE · {careLevel}</span>
+          <h2>
+            {urgent
+              ? "Please seek urgent medical help."
+              : "Latest suggested care"}
+          </h2>
+          <p>{plan.reason}</p>
+          {plan.nextSteps.map((step, i) => (
+            <p key={i}>{step}</p>
+          ))}
+          {urgent && (
+            <strong className="urgent-guidance">{urgentGuidance}</strong>
+          )}
+          <p>{draftNotice}</p>
+        </div>
+      </section>
       <div className="brief-grid">
         <section className="panel brief-editor">
           <div className="panel-heading">
@@ -122,18 +163,20 @@ export function DoctorBrief({
               <Download size={16} /> Download text
             </button>
           </section>
-          <section className="brief-appointment">
-            <span className="field-label">
-              {booking ? "SAMPLE APPOINTMENT" : "YOUR APPOINTMENT"}
-            </span>
-            <strong>{doctor?.name ?? "No appointment booked"}</strong>
-            {booking && <span>{booking.slot}</span>}
-            <p>
-              {booking
-                ? "Demo only. No clinic has been contacted."
-                : "Take this brief to a clinician of your choice."}
-            </p>
-          </section>
+          {!urgent && (
+            <section className="brief-appointment">
+              <span className="field-label">
+                {booking ? "SAMPLE APPOINTMENT" : "YOUR APPOINTMENT"}
+              </span>
+              <strong>{doctor?.name ?? "No appointment booked"}</strong>
+              {booking && <span>{booking.slot}</span>}
+              <p>
+                {booking
+                  ? "Demo only. No clinic has been contacted."
+                  : "Take this brief to a clinician of your choice."}
+              </p>
+            </section>
+          )}
           <p className="brief-privacy">
             Your live conversation and edits stay in memory in this browser
             session. Download only when you’re ready to keep a copy.

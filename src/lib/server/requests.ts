@@ -12,7 +12,15 @@ export async function readBody<T>(
   request: Request,
   schema: z.ZodType<T>,
 ): Promise<T> {
-  if (request.headers.get("origin") !== new URL(request.url).origin)
+  const url = new URL(request.url);
+  // Next can normalize request.url to localhost; Host retains the address
+  // used by this directly bound local browser. Do not trust forwarded hosts.
+  const expectedOrigin = `${url.protocol}//${request.headers.get("host") || url.host}`;
+  const externalHost = new URL(expectedOrigin).hostname;
+  if (
+    !["localhost", "127.0.0.1", "[::1]"].includes(externalHost) ||
+    request.headers.get("origin") !== expectedOrigin
+  )
     throw new ApiError(
       403,
       "Unexpected request origin. Open HealthMate directly and try again.",

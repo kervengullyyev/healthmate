@@ -45,7 +45,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-On 4 October 2026: 19 unit tests and 7 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified** because a configured project key was not available during these checks. See [verification evidence](docs/verification.md).
+On 4 October 2026: 23 unit tests and 12 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified** because a configured project key was not available during these checks. See [verification evidence](docs/verification.md).
 
 ## Prototype boundaries
 
@@ -53,7 +53,9 @@ HealthMate is an adult health companion, not a clinician or a clinically validat
 
 There are no real appointments, external clinic contacts, authentication, uploads, analytics or app-side audio recording. Live transcripts, plans and edits stay in browser memory; refreshing loses them. OpenAI receives live audio and messages used for responses; standalone Responses requests use `store: false`. OpenAI service data policies still apply. Only a synthetic demo booking is stored in this app's localStorage namespace. Reset clears it.
 
-API endpoints use origin checks, bounded bodies and local process rate limits. These are appropriate for this local prototype; public hosting needs authentication, durable rate limits, a privacy/retention review and clinical evaluation before use. This scope does not publish a site.
+API endpoints accept matching loopback origins (localhost, 127.0.0.1 or ::1), with bounded bodies and local process rate limits. These are appropriate for this local prototype; public hosting needs authentication, durable rate limits, a privacy/retention review and clinical evaluation before use. This scope does not publish a site.
+
+Live interviews have a visible message/body budget so the full history and later corrections fit within the request limits. Prepare a plan at the limit or start a fresh interview; history is not silently truncated. Voice closes near the budget and keeps final captions.
 
 The demo is fixed; it does not interpret custom symptoms. Print/save PDF uses the browser, and the editable brief should be checked before export.
 

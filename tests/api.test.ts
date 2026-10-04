@@ -133,3 +133,33 @@ it("aborts an upstream operation after its deadline", async () => {
   await vi.advanceTimersByTimeAsync(30001);
   expect(await result).toMatchObject({ status: 504 });
 });
+it("uses the browser-facing host when Next normalizes its internal URL", async () => {
+  const r = new Request("http://localhost:3000/api/plan", {
+    method: "POST",
+    headers: {
+      host: "127.0.0.1:3000",
+      origin: "http://127.0.0.1:3000",
+      "Content-Type": "application/json",
+      "x-forwarded-for": crypto.randomUUID(),
+    },
+    body: JSON.stringify({ messages: [] }),
+  });
+  expect((await plan(r)).status).toBe(400);
+});
+it("rejects an untrusted host even when its Origin matches", async () => {
+  const upstream = vi.fn(async () => {
+    throw new Error("must not call upstream");
+  });
+  vi.stubGlobal("fetch", upstream);
+  const r = new Request("http://localhost:3000/api/session", {
+    method: "POST",
+    headers: {
+      host: "other.example:3000",
+      origin: "http://other.example:3000",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ sdp: "v=0\r\n" }),
+  });
+  expect((await session(r)).status).toBe(403);
+  expect(upstream).not.toHaveBeenCalled();
+});

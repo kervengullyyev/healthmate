@@ -14,6 +14,7 @@ import { Avatar } from "./avatar";
 import { demoAnswers } from "@/lib/demo";
 import type { SessionState } from "@/lib/session";
 import type { useLive } from "@/hooks/use-live";
+import { canAddExchange } from "@/lib/conversation-budget";
 type Props = {
   session: SessionState;
   live: ReturnType<typeof useLive>;
@@ -38,6 +39,8 @@ export function Conversation({
   const bottom = useRef<HTMLDivElement>(null);
   const active = ["connecting", "listening", "ending"].includes(live.status);
   const demo = session.mode === "demo";
+  const atLimit = !demo && !canAddExchange(session.messages);
+  const messageFits = canAddExchange(session.messages, text.trim());
   const canPlan =
     !pending &&
     !active &&
@@ -123,6 +126,12 @@ export function Conversation({
             <div ref={bottom} />
           </div>
           <div className="chat-input-area">
+            {atLimit && (
+              <p role="status" className="panel-note">
+                Interview limit reached. Your full history is preserved. Create
+                your care plan, review corrections there, or start fresh.
+              </p>
+            )}
             {demo ? (
               session.demoStep < 5 ? (
                 <div className="sample-response">
@@ -149,7 +158,7 @@ export function Conversation({
                 onSubmit={async (event) => {
                   event.preventDefault();
                   const value = text.trim();
-                  if (!value || pending || active) return;
+                  if (!value || pending || active || !messageFits) return;
                   setText("");
                   await onSend(value);
                 }}
@@ -167,7 +176,7 @@ export function Conversation({
                   value={text}
                   maxLength={2000}
                   rows={2}
-                  disabled={pending || active}
+                  disabled={pending || active || atLimit}
                   onChange={(event) => setText(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && !event.shiftKey) {
@@ -180,11 +189,17 @@ export function Conversation({
                   className="send-button"
                   type="submit"
                   aria-label="Send message"
-                  disabled={!text.trim() || pending || active}
+                  disabled={!text.trim() || pending || active || !messageFits}
                 >
                   <Send size={18} />
                 </button>
               </form>
+            )}
+            {!demo && !atLimit && text.trim() && !messageFits && (
+              <p role="status" className="panel-note">
+                This message exceeds the remaining interview space. Shorten it
+                or prepare your care plan; your existing history is preserved.
+              </p>
             )}
             <span className="input-note">
               HealthMate offers guidance, not a diagnosis. For immediate danger,
