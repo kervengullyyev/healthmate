@@ -50,7 +50,7 @@ export function Home({
           </p>
           <div className="hero-actions">
             <button className="button primary" onClick={onStartVoice}>
-              <Mic size={18} /> Talk to HealthMate <ArrowRight size={17} />
+              <Mic size={18} /> Talk to ontuc <ArrowRight size={17} />
             </button>
             <button className="text-button" onClick={onStartText}>
               <Keyboard size={17} /> Type instead

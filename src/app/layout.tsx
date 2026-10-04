@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "HealthMate — a little clarity, a little care",
+  title: "ontuc — a little clarity, a little care",
   description:
     "Your AI health companion. Talk it through, find your next step, and prepare for care.",
 };

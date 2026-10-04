@@ -1,4 +1,4 @@
-# HealthMate
+# ontuc
 
 A hackathon health companion with a minimal main screen: Milo, one **Talk to Milo** button and a compact top-right account icon. Click to start voice; the same button cancels setup or ends the conversation. While Milo speaks, the supplied `public/videos/milo.mp4` plays muted and loops continuously through speech pauses. User interruption stops it; response completion is inferred after two seconds of output silence, then the still avatar returns.
 
@@ -52,7 +52,7 @@ On 4 October 2026: 66 unit tests and 31 browser tests passed; lint, typecheck an
 
 ## Prototype boundaries
 
-HealthMate is an adult health companion, not a clinician or a clinically validated triage service. It does not diagnose or prescribe. AI output can be wrong and needs human review. Unknown history stays unknown. Possible urgent symptoms trigger professional-help guidance immediately. Milo may separately save a user-requested demo appointment after confirmation, while explaining that it does not replace or delay urgent care. The original care-journey screen still blocks routine booking for urgent plans.
+ontuc is an adult health companion, not a clinician or a clinically validated triage service. It does not diagnose or prescribe. AI output can be wrong and needs human review. Unknown history stays unknown. Possible urgent symptoms trigger professional-help guidance immediately. Milo may separately save a user-requested demo appointment after confirmation, while explaining that it does not replace or delay urgent care. The original care-journey screen still blocks routine booking for urgent plans.
 
 There are no real appointments, external clinic contacts, uploads, analytics or app-side audio recording. Google supplies your verified identity, name and email; the app uses an encrypted, HttpOnly session cookie with a 24-hour lifetime. Live transcripts, plans and edits stay in browser memory; refreshing loses them. OpenAI receives live audio and messages used for responses; standalone Responses requests use `store: false`. OpenAI service data policies still apply. Demo appointment entries, including manually entered descriptions or Milo's conversation summaries, are stored in this app's localStorage namespaces, separated by Google account ID. They stay in the current browser and are not synchronized across devices. The journey reset clears its own sample booking; the main Appointments list remains until browser storage is cleared.
 

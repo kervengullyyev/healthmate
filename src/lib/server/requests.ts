@@ -23,7 +23,7 @@ export async function readBody<T>(
   )
     throw new ApiError(
       403,
-      "Unexpected request origin. Open HealthMate directly and try again.",
+      "Unexpected request origin. Open ontuc directly and try again.",
     );
   if (!request.headers.get("content-type")?.includes("application/json"))
     throw new ApiError(400, "A JSON request is required.");

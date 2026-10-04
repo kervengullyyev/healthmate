@@ -42,7 +42,7 @@ export function Avatar({
         src="/images/healthmate-avatar.png"
         width={1254}
         height={1254}
-        alt="Milo, your friendly mint-green HealthMate companion"
+        alt="Milo, your friendly mint-green ontuc companion"
         priority
         className="mascot mascot-image"
       />

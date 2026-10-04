@@ -50,13 +50,13 @@ export function AppShell({
         <button
           className="brand"
           onClick={() => onNavigate("home")}
-          aria-label="HealthMate home"
+          aria-label="ontuc home"
         >
           <span className="brand-icon">
             <Heart size={21} fill="currentColor" />
           </span>
           <span>
-            health<span className="brand-light">mate</span>
+            ontuc
             <span className="brand-dot">.</span>
           </span>
         </button>

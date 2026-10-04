@@ -29,7 +29,7 @@ export function Appointments({
         <div>
           <span className="eyebrow">THE NEXT STEP, TOGETHER</span>
           <h1>A little closer to care.</h1>
-          <p>Explore how HealthMate could connect you with a professional.</p>
+          <p>Explore how ontuc could connect you with a professional.</p>
         </div>
         <span className="step-pill">Step 03 of 04</span>
       </div>

@@ -30,7 +30,7 @@ test("leaving the conversation cancels pending microphone acquisition", async ({
   });
   await page.goto("/journey");
   await page
-    .getByRole("button", { name: "Talk to HealthMate", exact: true })
+    .getByRole("button", { name: "Talk to ontuc", exact: true })
     .click();
   await expect(page.getByText("Connecting", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Overview", exact: true }).click();
@@ -51,7 +51,7 @@ test("leaving an active voice conversation sends close and releases media", asyn
   );
   await page.goto("/journey");
   await page
-    .getByRole("button", { name: "Talk to HealthMate", exact: true })
+    .getByRole("button", { name: "Talk to ontuc", exact: true })
     .click();
   await expect(page.getByText("Live voice", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Overview", exact: true }).click();

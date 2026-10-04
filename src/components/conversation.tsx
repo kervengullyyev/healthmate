@@ -76,7 +76,7 @@ export function Conversation({
               <span className="tiny-avatar">✦</span>
               <span>
                 <strong>Milo</strong>
-                <small>Your HealthMate companion</small>
+                <small>Your ontuc companion</small>
               </span>
             </span>
             <span className="status-pill">
@@ -202,7 +202,7 @@ export function Conversation({
               </p>
             )}
             <span className="input-note">
-              HealthMate offers guidance, not a diagnosis. For immediate danger,
+              ontuc offers guidance, not a diagnosis. For immediate danger,
               seek emergency help.
             </span>
           </div>

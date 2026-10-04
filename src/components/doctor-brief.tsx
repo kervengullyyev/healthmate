@@ -41,14 +41,14 @@ export function DoctorBrief({
     : booking && doctor
       ? `SAMPLE APPOINTMENT — NO REAL BOOKING\n${doctor.name}\n${booking.slot}`
       : "APPOINTMENT\nNo appointment booked.";
-  const fullBrief = `HEALTHMATE — DOCTOR BRIEF\n${mode === "demo" ? "SYNTHETIC DEMONSTRATION\n" : ""}\nPATIENT-REVIEWED CONCERN\n${plan.concern}\n\n${latestCare}\n\n${draftNotice}\n\nEDITABLE DRAFT\n${brief}\n\n${appointment}\n\nPrepared with AI assistance. Patient statements and AI suggestions require clinician review.`;
+  const fullBrief = `ontuc — DOCTOR BRIEF\n${mode === "demo" ? "SYNTHETIC DEMONSTRATION\n" : ""}\nPATIENT-REVIEWED CONCERN\n${plan.concern}\n\n${latestCare}\n\n${draftNotice}\n\nEDITABLE DRAFT\n${brief}\n\n${appointment}\n\nPrepared with AI assistance. Patient statements and AI suggestions require clinician review.`;
   function download() {
     const url = URL.createObjectURL(
       new Blob([fullBrief], { type: "text/plain;charset=utf-8" }),
     );
     const link = document.createElement("a");
     link.href = url;
-    link.download = "healthmate-doctor-brief.txt";
+    link.download = "ontuc-doctor-brief.txt";
     link.click();
     URL.revokeObjectURL(url);
   }
@@ -184,7 +184,7 @@ export function DoctorBrief({
         </aside>
       </div>
       <article className="print-brief">
-        <h1>HealthMate · Doctor brief</h1>
+        <h1>ontuc · Doctor brief</h1>
         <pre>{fullBrief}</pre>
       </article>
     </div>

@@ -1,11 +1,11 @@
 # Google sign-in setup
 
-HealthMate now requires Google sign-in before opening Milo, the appointment form or the care journey. The AI endpoints also require a valid session. The integration is ready; create a Google OAuth client to enable the login button.
+ontuc now requires Google sign-in before opening Milo, the appointment form or the care journey. The AI endpoints also require a valid session. The integration is ready; create a Google OAuth client to enable the login button.
 
 ## 1. Create the OAuth client
 
 1. Open the [Google Cloud console](https://console.cloud.google.com/) and select or create a project.
-2. Open **Google Auth Platform**. Set the app name to **HealthMate**, add your support email and complete the branding/contact details.
+2. Open **Google Auth Platform**. Set the app name to **ontuc**, add your support email and complete the branding/contact details.
 3. Set the audience to **External** for personal Google accounts. While the app is in Testing, add the Google accounts you will use for the hackathon as test users.
 4. Under **Clients**, create an OAuth client with application type **Web application**.
 5. Add this exact **Authorized redirect URI**:
@@ -18,7 +18,7 @@ HealthMate now requires Google sign-in before opening Milo, the appointment form
 
 Google requires the callback URI to match the registered value. Use `127.0.0.1` consistently when opening this local app; `localhost` is a different host. See [Google's web-server OAuth instructions](https://developers.google.com/identity/protocols/oauth2/web-server) and the [Auth.js Google provider guide](https://authjs.dev/getting-started/providers/google).
 
-## 2. Configure HealthMate
+## 2. Configure ontuc
 
 Edit `.env.local` in the project folder. Preserve your existing `OPENAI_API_KEY` and other settings. Add the credentials below, replacing the placeholders:
 
@@ -43,7 +43,7 @@ Stop and restart the development server after configuring the credentials:
 npm run dev
 ```
 
-Open [HealthMate](http://127.0.0.1:3000/) and select **Continue with Google**. The account menu shows your Google name and email, along with **Sign out**. If Google reports `redirect_uri_mismatch`, check the callback above character for character and confirm `AUTH_URL` uses the same host and port.
+Open [ontuc](http://127.0.0.1:3000/) and select **Continue with Google**. The account menu shows your Google name and email, along with **Sign out**. If Google reports `redirect_uri_mismatch`, check the callback above character for character and confirm `AUTH_URL` uses the same host and port.
 
 ## 3. Test the configured login
 
