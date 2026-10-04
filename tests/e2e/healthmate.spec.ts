@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 async function samplePlan(page: Page) {
-  await page.goto("/");
+  await page.goto("/journey");
   await page.getByRole("button", { name: "Try a demo", exact: true }).click();
   for (let i = 0; i < 5; i++)
     await page
@@ -93,7 +93,7 @@ test("failed live regeneration preserves patient corrections and shows the failu
           json: { error: "The plan could not be generated." },
         });
   });
-  await page.goto("/");
+  await page.goto("/journey");
   await page.getByRole("button", { name: "Type instead", exact: true }).click();
   await page.getByLabel("Your message").fill("My headaches keep recurring.");
   await page.getByRole("button", { name: "Send message" }).click();
@@ -135,7 +135,7 @@ test("an urgent result interrupts routine booking on mobile", async ({
       },
     }),
   );
-  await page.goto("/");
+  await page.goto("/journey");
   await page.getByRole("button", { name: "Type instead", exact: true }).click();
   await page
     .getByLabel("Your message")
@@ -161,7 +161,7 @@ test("an urgent result interrupts routine booking on mobile", async ({
   ).toBe(true);
 });
 test("keyboard users can reach the primary action", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/journey");
   await page.keyboard.press("Tab");
   await expect(
     page.getByRole("link", { name: "Skip to content" }),

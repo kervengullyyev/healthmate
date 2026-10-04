@@ -2217,3 +2217,47 @@ main {
 /* Keep supporting text comfortably readable. */
 .feature-card p,.panel-note,.input-note,.missing-list,.care-summary p,.clinician-card p,.consultation-format,.brief-privacy,.brief-appointment p,.brief-aside .panel>p{color:#66765e}.message-bubble p,.next-steps li p{font-size:13px}.sample-response p,.care-summary p,.feature-card p{font-size:12px}.brief-editor textarea{font-size:12px}.brief-checks{color:#627b51}.field-label,.hero-copy>p,.page-intro p{color:#6d7967}
 @media(max-width:650px){.message-bubble p,.brief-editor textarea{font-size:12px}.feature-card p,.care-summary p,.input-note,.panel-note{font-size:11px}}
+
+/* The main experience: just Milo and one voice action. */
+.milo-screen {
+  width: 100%;
+  min-height: 100svh;
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+.milo-screen .avatar {
+  width: min(440px, 90vw, 65svh);
+  height: auto;
+  aspect-ratio: 1;
+}
+.milo-talk {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-width: 190px;
+  min-height: 54px;
+  margin-top: 16px;
+  padding: 15px 25px;
+  border: 0;
+  border-radius: 100px;
+  background: var(--teal);
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 6px 18px #27665318;
+  z-index: 2;
+}
+.milo-talk:hover:not(:disabled) { background: #1f5746; }
+.milo-error {
+  max-width: 400px;
+  margin-top: 22px;
+  color: #925047;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}

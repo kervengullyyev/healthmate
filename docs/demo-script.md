@@ -1,6 +1,6 @@
 # HealthMate — 90-second demo
 
-Use **Try a demo**. No key or microphone is needed. All patient details, clinician identities and slots in this walkthrough are synthetic.
+For the minimalist interface, open `/` and click **Talk to Milo** once live voice is configured. For the full care journey below, open `/journey` and use **Try a demo**. No key or microphone is needed. All patient details, clinician identities and slots in this walkthrough are synthetic.
 
 | Time | Action | Narration |
 | --- | --- | --- |

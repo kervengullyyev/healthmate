@@ -1,6 +1,8 @@
 # HealthMate
 
-A hackathon prototype that turns a voice or text conversation into a suggested care plan and an editable doctor brief. Milo, the generated companion avatar, accompanies the five-screen journey. Clinicians and appointment slots are synthetic samples.
+A hackathon health companion with a minimal main screen: Milo and one **Talk to Milo** button. Click to start voice; the same button cancels setup or ends the conversation.
+
+The complete care-plan, sample appointment and editable doctor-brief journey remains available at `/journey`. Clinicians and appointment slots are synthetic samples.
 
 ## Run locally
 
@@ -12,7 +14,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [HealthMate](http://127.0.0.1:3000). **Try a demo** works without an API key and walks through a fixed, clearly labelled synthetic headache scenario. The demo makes no AI requests; its fonts use Google Fonts with local system fallbacks.
+Open [Milo](http://127.0.0.1:3000). For the optional complete journey, open [the care journey](http://127.0.0.1:3000/journey). **Try a demo** on that route works without an API key and walks through a fixed, clearly labelled synthetic headache scenario. The demo makes no AI requests; its fonts use Google Fonts with local system fallbacks.
 
 For live voice and text, put a project `OPENAI_API_KEY` in `.env.local`. Keep it out of chat and version control. Restart the server after changing environment values. The API key stays on the server and has no `NEXT_PUBLIC_` prefix.
 
@@ -22,7 +24,7 @@ OPENAI_BACKEND_MODEL=gpt-6-luna
 OPENAI_LIVE_VOICE=marin
 ```
 
-The voice model is exactly **gpt-live-1**, using the Live WebRTC API with Responses delegation. The backend model and voice are server-configurable. The project/account must have access to these models. Microphone access needs localhost or HTTPS and browser permission; remote audio may require the **Enable audio** button if playback is blocked. End a voice session before generating its plan, so final captions can arrive.
+The voice model is exactly **gpt-live-1**, using the Live WebRTC API with Responses delegation. The backend model and voice are server-configurable. The project/account must have access to these models. Microphone access needs localhost or HTTPS and browser permission; remote audio may require the **Enable audio** button if playback is blocked. On `/journey`, end a voice session before generating its plan, so final captions can arrive. The minimal Milo screen keeps captions out of the visible interface.
 
 ## What works
 
@@ -45,7 +47,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-On 4 October 2026: 23 unit tests and 13 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified** because a configured project key was not available during these checks. See [verification evidence](docs/verification.md).
+On 4 October 2026: 23 unit tests and 16 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified** because a configured project key was not available during these checks. See [verification evidence](docs/verification.md).
 
 ## Prototype boundaries
 

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { fakeVoice } from "../helpers/fake-voice";
 
 test("the documented local origin reaches real API validation without calling AI", async ({
   request,
@@ -18,84 +19,6 @@ test("the documented local origin reaches real API validation without calling AI
   expect(crossOrigin.status()).toBe(403);
 });
 
-declare global {
-  interface Window {
-    voiceTest: {
-      resolve: () => void;
-      stopped: number;
-      closed: boolean;
-      closes: number;
-    };
-  }
-}
-
-async function fakeVoice(
-  page: import("@playwright/test").Page,
-  delayed: boolean,
-) {
-  await page.route("**/api/status", (route) =>
-    route.fulfill({ json: { liveConfigured: true } }),
-  );
-  await page.addInitScript((delayed) => {
-    window.voiceTest = {
-      resolve: () => {},
-      stopped: 0,
-      closed: false,
-      closes: 0,
-    };
-    const track = { enabled: true, stop: () => window.voiceTest.stopped++ };
-    const stream = { getTracks: () => [track], getAudioTracks: () => [track] };
-    Object.defineProperty(navigator, "mediaDevices", {
-      value: {
-        getUserMedia: () =>
-          delayed
-            ? new Promise((resolve) => {
-                window.voiceTest.resolve = () => resolve(stream);
-              })
-            : Promise.resolve(stream),
-      },
-    });
-    class Channel extends EventTarget {
-      readyState = "open";
-      close() {}
-      send(value: string) {
-        if (JSON.parse(value).type === "session.close") {
-          window.voiceTest.closes++;
-          this.dispatchEvent(
-            new MessageEvent("message", {
-              data: JSON.stringify({ type: "session.closed" }),
-            }),
-          );
-        }
-      }
-    }
-    class Peer extends EventTarget {
-      channel = new Channel();
-      iceGatheringState = "complete";
-      localDescription = { sdp: "v=0\r\n" };
-      addTrack() {}
-      createDataChannel() {
-        return this.channel;
-      }
-      async createOffer() {
-        return { type: "offer", sdp: "v=0\r\n" };
-      }
-      async setLocalDescription() {}
-      async setRemoteDescription() {
-        this.channel.dispatchEvent(
-          new MessageEvent("message", {
-            data: JSON.stringify({ type: "session.started" }),
-          }),
-        );
-      }
-      close() {
-        window.voiceTest.closed = true;
-      }
-    }
-    Object.defineProperty(window, "RTCPeerConnection", { value: Peer });
-  }, delayed);
-}
-
 test("leaving the conversation cancels pending microphone acquisition", async ({
   page,
 }) => {
@@ -105,7 +28,7 @@ test("leaving the conversation cancels pending microphone acquisition", async ({
     sessions++;
     return route.fulfill({ json: { transport: { sdp: "answer" } } });
   });
-  await page.goto("/");
+  await page.goto("/journey");
   await page
     .getByRole("button", { name: "Talk to HealthMate", exact: true })
     .click();
@@ -126,7 +49,7 @@ test("leaving an active voice conversation sends close and releases media", asyn
   await page.route("**/api/session", (route) =>
     route.fulfill({ json: { transport: { sdp: "answer" } } }),
   );
-  await page.goto("/");
+  await page.goto("/journey");
   await page
     .getByRole("button", { name: "Talk to HealthMate", exact: true })
     .click();
@@ -170,7 +93,7 @@ test("urgent regeneration preserves edits while replacing exported care guidance
       },
     });
   });
-  await page.goto("/");
+  await page.goto("/journey");
   await page.getByRole("button", { name: "Type instead", exact: true }).click();
   await page.getByLabel("Your message").fill("Recurring headaches.");
   await page.getByRole("button", { name: "Send message" }).click();
@@ -250,7 +173,7 @@ test("the interview budget preserves history and reserves room for plan correcti
       },
     });
   });
-  await page.goto("/");
+  await page.goto("/journey");
   await page.getByRole("button", { name: "Type instead", exact: true }).click();
   for (let i = 0; i < 14; i++) {
     await page.getByLabel("Your message").fill(`Patient detail ${i + 1}.`);
@@ -285,7 +208,7 @@ test("mobile navigation shows the new screen heading at the top", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/journey");
   await page.getByRole("button", { name: "Try a demo", exact: true }).click();
   for (let i = 0; i < 5; i++)
     await page
