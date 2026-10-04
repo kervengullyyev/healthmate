@@ -15,12 +15,12 @@ export async function authenticate(context: BrowserContext, user = testUser) {
   await context.addCookies([await sessionCookie(user)]);
 }
 export const test = base.extend({
-  context: async ({ context }, provide) => {
-    await authenticate(context);
+  context: async ({ context }, provide, testInfo) => {
+    await authenticate(context, { ...testUser, id: `${testUser.id}-${testInfo.testId}` });
     await provide(context);
   },
-  request: async ({ playwright, baseURL }, provide) => {
-    const request = await playwright.request.newContext({ baseURL, storageState: { cookies: [await sessionCookie()], origins: [] } });
+  request: async ({ playwright, baseURL }, provide, testInfo) => {
+    const request = await playwright.request.newContext({ baseURL, storageState: { cookies: [await sessionCookie({ ...testUser, id: `${testUser.id}-${testInfo.testId}` })], origins: [] } });
     await provide(request);
     await request.dispose();
   },

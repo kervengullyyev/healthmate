@@ -36,7 +36,7 @@ export function Appointments({
       <div className="demo-disclosure">
         <ShieldCheck size={18} />
         <div>
-          <strong>Demo appointments · no real booking</strong>
+          <strong>Appointment requests</strong>
           <p>
             These clinicians and slots are fictional. Confirming saves a sample
             record in this browser; it does not contact a clinic.
@@ -49,9 +49,9 @@ export function Appointments({
             <Check size={28} />
           </span>
           <span className="eyebrow">ONE MORE STEP, TAKEN</span>
-          <h2>Your demo appointment is saved.</h2>
+          <h2>Your appointment is saved.</h2>
           <p>
-            This is a sample confirmation. No real appointment has been made.
+            Your appointment request is saved in this browser. Clinic confirmation is required.
           </p>
           <div className="booking-detail">
             <span className={`doctor-initials ${booked.color}`}>
@@ -148,7 +148,7 @@ export function Appointments({
                   });
               }}
             >
-              Confirm demo appointment <ArrowRight size={16} />
+              Confirm appointment <ArrowRight size={16} />
             </button>
           </div>
         </>

@@ -99,9 +99,9 @@ test("urgent regeneration preserves edits while replacing exported care guidance
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByText("Tell me more.", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Create my care plan" }).click();
-  await page.getByRole("button", { name: "Explore demo appointments" }).click();
+  await page.getByRole("button", { name: "Explore appointments" }).click();
   await page.getByRole("button", { name: "Select Dr. Anna Kowalska" }).click();
-  await page.getByRole("button", { name: "Confirm demo appointment" }).click();
+  await page.getByRole("button", { name: "Confirm appointment" }).click();
   await page.getByRole("button", { name: "Prepare my doctor brief" }).click();
   await page
     .getByRole("textbox", { name: "Doctor brief", exact: true })

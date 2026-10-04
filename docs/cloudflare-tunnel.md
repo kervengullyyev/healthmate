@@ -69,3 +69,7 @@ launchctl bootout gui/$(id -u) /Users/kerven/Library/LaunchAgents/com.healthmate
 To bring it back, run `launchctl bootstrap gui/$(id -u)` with each of those plist paths. Keep the plist files if the site should start again on the next login; remove only these two files to disable future automatic startup.
 
 Cloudflare references: [locally managed tunnel setup](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/create-local-tunnel/), [macOS services](https://developers.cloudflare.com/tunnel/features/locally-managed-tunnels/as-a-service/macos/).
+
+## Appointment database
+
+Bookings use `data/appointments.sqlite` in the app folder, or the private `APPOINTMENTS_DB_PATH` override. Preserve this database across deployments or moves; it is ignored by Git and contains appointment descriptions. See [SQLite operations](sqlite-appointments.md) for backups. Rebuilding `.next` does not replace the database. Node22.16 or newer is required.

@@ -99,6 +99,50 @@ function callbacks() {
     onSpeaking: vi.fn(),
   };
 }
+function delegate(channel: Channel, callId = "pending-call") {
+  const responseId = crypto.randomUUID();
+  const delegationId = crypto.randomUUID();
+  for (const event of [
+    { type: "response.created", response: { id: responseId } },
+    { type: "response.output_item.done", item: { type: "function_call", call_id: callId, name: "prepare_demo_appointment", arguments: JSON.stringify({ clinicianId: null, date: null, time: null, description: "Checkup" }) } },
+    { type: "response.completed", response: { id: responseId, output: [] } },
+  ]) channel.emit({ type: "response.event", delegation_id: delegationId, event_id: crypto.randomUUID(), event });
+}
+it("deduplicates a repeated call while its server availability request is pending", async () => {
+  let resolve!: (response: Response) => void;
+  let lookups = 0;
+  vi.stubGlobal("fetch", async (url: string) => url.includes("availability") ? (lookups++, new Promise<Response>(r => { resolve = r; })) : Response.json({ session: { id: "test" }, transport: { type: "webrtc", sdp: "answer" } }));
+  const connection = createLiveConnection(callbacks());
+  await connected(connection);
+  const channel = Peer.latest.channel;
+  delegate(channel);
+  await vi.waitFor(() => expect(lookups).toBe(1));
+  delegate(channel);
+  resolve(Response.json({ occupied: [] }));
+  await vi.waitFor(() => expect(channel.sent).toHaveLength(4));
+  expect(lookups).toBe(1);
+  const results = channel.sent.map(s => JSON.parse(s)).filter(item => item.type === "response.item.create");
+  expect(results[0].item.output).toBe(results[1].item.output);
+  connection.dispose(); channel.emit({ type: "session.closed" });
+});
+it("does not send a delayed appointment result into a closed or restarted session", async () => {
+  let resolve!: (response: Response) => void;
+  let started = false;
+  vi.stubGlobal("fetch", async (url: string) => url.includes("availability") ? new Promise<Response>(r => { resolve = r; started = true; }) : Response.json({ session: { id: "test" }, transport: { type: "webrtc", sdp: "answer" } }));
+  const connection = createLiveConnection(callbacks());
+  await connected(connection);
+  const oldChannel = Peer.latest.channel;
+  delegate(oldChannel);
+  await vi.waitFor(() => expect(started).toBe(true));
+  connection.dispose(); oldChannel.emit({ type: "session.closed" });
+  await connected(connection);
+  const newChannel = Peer.latest.channel;
+  resolve(Response.json({ occupied: [] }));
+  await new Promise(r => setTimeout(r, 20));
+  expect(oldChannel.sent.map(s => JSON.parse(s).type)).toEqual(["session.close"]);
+  expect(newChannel.sent).toEqual([]);
+  connection.dispose(); newChannel.emit({ type: "session.closed" });
+});
 async function connected(connection: ReturnType<typeof createLiveConnection>) {
   const p = connection.start();
   await vi.waitFor(() => expect(Peer.latest.remoteDescription).toBeTruthy());
@@ -242,6 +286,7 @@ it("returns completed tool results only after the delegated response finishes", 
       instructions: null,
     },
   });
+  await vi.waitFor(() => expect(channel.sent).toHaveLength(2));
   const sent = channel.sent.map((value) => JSON.parse(value));
   expect(sent[0]).toMatchObject({
     type: "response.item.create",

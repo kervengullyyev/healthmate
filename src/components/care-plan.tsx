@@ -125,7 +125,7 @@ export function CarePlanView({
         <div>
           {!urgent && (
             <button className="button primary" onClick={onAppointments}>
-              Explore demo appointments <ArrowRight size={16} />
+              Explore appointments <ArrowRight size={16} />
             </button>
           )}
           <button className="button secondary" onClick={onBrief}>

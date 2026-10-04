@@ -45,9 +45,11 @@ export function createLiveConnection(callbacks: Callbacks, userId?: string) {
   >();
   const results = new Map<
     string,
-    { call: FunctionCall; output: Record<string, unknown> }
+    { call: FunctionCall; output: Promise<Record<string, unknown>> }
   >();
-  let appointmentTools = createAppointmentTools(userId);
+  let toolController = new AbortController();
+  let appointmentTools = createAppointmentTools(userId, undefined, toolController.signal);
+  let toolQueue = Promise.resolve();
   // GPT-Live forwards Responses events in an envelope. Calls are collected
   // from output_item.done; completed.output is intentionally empty.
   // https://developers.openai.com/api/docs/guides/live-delegation
@@ -84,6 +86,9 @@ export function createLiveConnection(callbacks: Callbacks, userId?: string) {
       const batch = batches.get(key);
       if (!batch || batch.responseId !== event.response?.id) return true;
       batches.delete(key);
+      const token = generation, target = channel, tools = appointmentTools, callTranscript = transcript;
+      toolQueue = toolQueue.then(async () => {
+      if (token !== generation || closePromise || !ready || target.readyState !== "open") return;
       for (const call of batch.calls) {
         const previous = results.get(call.callId);
         const output = previous
@@ -94,27 +99,30 @@ export function createLiveConnection(callbacks: Callbacks, userId?: string) {
                 status: "error",
                 message: "A repeated function call changed its arguments.",
               }
-          : appointmentTools.run(call.name, call.arguments, transcript);
-        if (!previous) results.set(call.callId, { call, output });
-        channel.send(
+          : tools.run(call.name, call.arguments, callTranscript);
+        if (!previous) results.set(call.callId, { call, output: Promise.resolve(output) });
+        const result = await output;
+        if (token !== generation || closePromise || !ready || target.readyState !== "open") return;
+        target.send(
           JSON.stringify({
             type: "response.item.create",
             event_id: crypto.randomUUID(),
             item: {
               type: "function_call_output",
               call_id: call.callId,
-              output: JSON.stringify(output),
+              output: JSON.stringify(result),
             },
           }),
         );
       }
       if (batch.calls.length)
-        channel.send(
+        target.send(
           JSON.stringify({
             type: "response.create",
             event_id: crypto.randomUUID(),
           }),
         );
+      }).catch(() => { if (token === generation && !closePromise) fail("The appointment could not be saved. Please try again."); });
     } else if (
       event.type === "response.failed" ||
       event.type === "response.cancelled"
@@ -130,6 +138,8 @@ export function createLiveConnection(callbacks: Callbacks, userId?: string) {
     clearTimeout(startupTimer);
     clearTimeout(closeTimer);
     controller?.abort();
+    toolController.abort();
+    toolQueue = Promise.resolve();
     microphone?.getTracks().forEach((track) => track.stop());
     microphone = null;
     channel?.close();
@@ -247,7 +257,9 @@ export function createLiveConnection(callbacks: Callbacks, userId?: string) {
     finalised = false;
     closePromise = null;
     transcript = emptyTranscript();
-    appointmentTools = createAppointmentTools(userId);
+    toolController = new AbortController();
+    appointmentTools = createAppointmentTools(userId, undefined, toolController.signal);
+    toolQueue = Promise.resolve();
     results.clear();
     const token = ++generation;
     callbacks.onStatus("connecting");

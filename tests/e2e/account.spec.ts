@@ -44,10 +44,10 @@ test("appointments shows only bookings and records stays empty on mobile", async
     exact: true,
   });
   await expect(
-    appointments.getByText("No booked appointments yet."),
+    appointments.getByText("No appointments yet."),
   ).toBeVisible();
   await expect(
-    appointments.getByRole("link", { name: "Book demo appointment" }),
+    appointments.getByRole("link", { name: "Book appointment" }),
   ).toBeVisible();
   await expect(
     appointments.locator(".clinician-card, .page-intro, .step-pill"),

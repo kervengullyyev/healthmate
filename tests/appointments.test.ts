@@ -8,13 +8,21 @@ import {
 import { applyTranscript, emptyTranscript } from "../src/lib/live/events";
 
 afterEach(() => vi.unstubAllGlobals());
-function scenario() {
+it("can prepare a new appointment even if an earlier browser record cannot be imported", async () => {
+  const tools = createAppointmentTools("google-owner", {
+    initialise: async () => { throw new Error("A legacy slot is no longer available."); },
+    occupied: async () => [],
+    book: async () => { throw new Error("No consent yet."); },
+  });
+  expect(await tools.run("prepare_demo_appointment", JSON.stringify({ clinicianId: null, date: null, time: null, description: "Checkup" }), emptyTranscript())).toMatchObject({ status: "awaiting_confirmation" });
+});
+async function scenario() {
   const saved = new Map<string, string>();
   vi.stubGlobal("localStorage", {
     getItem: (key: string) => saved.get(key) ?? null,
     setItem: (key: string, value: string) => saved.set(key, value),
   });
-  const tools = createAppointmentTools();
+  const tools = createAppointmentTools(undefined, { occupied: async () => readDemoAppointments().map(({ clinicianId, date, time }) => ({ clinicianId, date, time })), book: async (input) => ({ ...bookDemoAppointment(input), status: "booked", createdAt: new Date().toISOString() }) });
   let transcript = emptyTranscript();
   let offset = 0;
   const say = (role: "user" | "assistant", text: string) => {
@@ -31,19 +39,19 @@ function scenario() {
   const run = (name: string, args: unknown) =>
     tools.run(name, JSON.stringify(args), transcript);
   const date = appointmentDay(1);
-  const proposal = run("prepare_demo_appointment", {
+  const proposal = await run("prepare_demo_appointment", {
     clinicianId: "anna",
     date,
     time: "15:30",
   });
   return { say, run, proposal, date };
 }
-it("cannot use consent to an unrelated question to book the prepared appointment", () => {
-  const { say, run, proposal } = scenario();
+it("cannot use consent to an unrelated question to book the prepared appointment", async () => {
+  const { say, run, proposal } = await scenario();
   say("assistant", "Would you like a summary of your symptoms?");
   say("user", "OK");
   expect(
-    run("book_demo_appointment", {
+    await run("book_demo_appointment", {
       proposalId: proposal.proposalId,
       confirmation: "OK",
     }),
@@ -51,8 +59,8 @@ it("cannot use consent to an unrelated question to book the prepared appointment
   expect(readDemoAppointments()).toEqual([]);
 });
 
-it("adds a summary to an existing slot without duplicating the booking or erasing it on an empty retry", () => {
-  scenario();
+it("adds a summary to an existing slot without duplicating the booking or erasing it on an empty retry", async () => {
+  await scenario();
   const slot = { clinicianId: "anna", date: appointmentDay(1), time: "15:30" };
   const first = bookDemoAppointment(slot);
   const updated = bookDemoAppointment({
@@ -67,31 +75,31 @@ it("adds a summary to an existing slot without duplicating the booking or erasin
     "Patient reports headaches. Cause unknown.",
   );
 });
-it("cannot reuse appointment consent after the assistant changes the question", () => {
-  const { say, run, proposal, date } = scenario();
+it("cannot reuse appointment consent after the assistant changes the question", async () => {
+  const { say, run, proposal, date } = await scenario();
   say(
     "assistant",
-    `Would you like me to book a demo appointment with Dr. Anna Kowalska on ${date} at 15:30?`,
+    `Would you like me to book an appointment with Dr. Anna Kowalska on ${date} at 15:30?`,
   );
   say("assistant", "Would you like a summary instead?");
   say("user", "OK");
   expect(
-    run("book_demo_appointment", {
+    await run("book_demo_appointment", {
       proposalId: proposal.proposalId,
       confirmation: "OK",
     }),
   ).toMatchObject({ status: "needs_confirmation" });
   expect(readDemoAppointments()).toEqual([]);
 });
-it("accepts a natural affirmative reply to the specific appointment question", () => {
-  const { say, run, proposal, date } = scenario();
+it("accepts a natural affirmative reply to the specific appointment question", async () => {
+  const { say, run, proposal, date } = await scenario();
   say(
     "assistant",
-    `Would you like me to book a demo appointment with Dr. Anna Kowalska on ${date} at 15:30?`,
+    `Would you like me to book an appointment with Dr. Anna Kowalska on ${date} at 15:30?`,
   );
   say("user", "Yes, that works.");
   expect(
-    run("book_demo_appointment", {
+    await run("book_demo_appointment", {
       proposalId: proposal.proposalId,
       confirmation: "Yes, that works.",
     }),
@@ -111,11 +119,11 @@ it.each([
   "Absolutely, thank you.",
   "Okay, please do.",
   "Yes please, that’s fine.",
-])("books the confirmed slot after conversational agreement: %s", (reply) => {
-  const { say, run, proposal } = scenario();
+])("books the confirmed slot after conversational agreement: %s", async (reply) => {
+  const { say, run, proposal } = await scenario();
   say("assistant", proposal.question as string);
   say("user", reply);
-  expect(run("book_demo_appointment", {
+  expect(await run("book_demo_appointment", {
     proposalId: proposal.proposalId,
     confirmation: reply,
   })).toMatchObject({ status: "booked" });
@@ -132,11 +140,11 @@ it.each([
   "Yes, I have headaches.",
   "Not now, thanks.",
   "Can you tell me more first?",
-])("does not book after refusal, uncertainty or a change: %s", (reply) => {
-  const { say, run, proposal } = scenario();
+])("does not book after refusal, uncertainty or a change: %s", async (reply) => {
+  const { say, run, proposal } = await scenario();
   say("assistant", proposal.question as string);
   say("user", reply);
-  expect(run("book_demo_appointment", {
+  expect(await run("book_demo_appointment", {
     proposalId: proposal.proposalId,
     confirmation: reply,
   })).toMatchObject({ status: "needs_confirmation" });
@@ -144,20 +152,20 @@ it.each([
 });
 it.each(["Actually, no thanks.", "Nope.", "Please don't book it.", "I'd rather not."])(
   "clears the pending proposal after a natural refusal: %s",
-  (reply) => {
-    const { say, run, proposal } = scenario();
+  async (reply) => {
+    const { say, run, proposal } = await scenario();
     say("assistant", proposal.question as string);
     say("user", reply);
     say("assistant", proposal.question as string);
     say("user", "Yes");
-    expect(run("book_demo_appointment", {
+    expect(await run("book_demo_appointment", {
       proposalId: proposal.proposalId,
       confirmation: "Yes",
     })).toMatchObject({ status: "needs_confirmation" });
     expect(readDemoAppointments()).toEqual([]);
   },
 );
-it("unavailable localStorage does not prevent reading the empty appointment list", () => {
+it("unavailable localStorage does not prevent reading the empty appointment list", async () => {
   vi.stubGlobal("localStorage", undefined);
   Object.defineProperty(globalThis, "localStorage", {
     configurable: true,
@@ -168,15 +176,15 @@ it("unavailable localStorage does not prevent reading the empty appointment list
   expect(() => readDemoAppointments()).not.toThrow();
   expect(readDemoAppointments()).toEqual([]);
 });
-it("chooses a default demo slot when asked to arrange an appointment without preferences", () => {
-  const { say, run, date } = scenario();
+it("chooses a default demo slot when asked to arrange an appointment without preferences", async () => {
+  const { say, run, date } = await scenario();
   say("user", "My stomach hurts very bad. Please take an appointment for me.");
-  say("assistant", "Please seek urgent medical care now. A demo appointment is not a substitute.");
-  const proposal = run("prepare_demo_appointment", {
+  say("assistant", "Please seek urgent medical care now. A appointment is not a substitute.");
+  const proposal = await run("prepare_demo_appointment", {
     clinicianId: null,
     date: null,
     time: null,
-    description: "Patient reports very bad stomach pain and requested a demo appointment. Urgent evaluation was advised.",
+    description: "Patient reports very bad stomach pain and requested an appointment. Urgent evaluation was advised.",
   });
   expect(proposal).toMatchObject({
     status: "awaiting_confirmation",
@@ -185,31 +193,31 @@ it("chooses a default demo slot when asked to arrange an appointment without pre
   expect(readDemoAppointments()).toEqual([]);
   say("assistant", proposal.question as string);
   say("user", "Please book it for me.");
-  expect(run("book_demo_appointment", {
+  expect(await run("book_demo_appointment", {
     proposalId: proposal.proposalId,
     confirmation: "Please book it for me.",
   })).toMatchObject({ status: "booked" });
   expect(readDemoAppointments()[0]).toMatchObject({
     clinicianId: "anna", date, time: "15:30",
-    description: "Patient reports very bad stomach pain and requested a demo appointment. Urgent evaluation was advised.",
+    description: "Patient reports very bad stomach pain and requested an appointment. Urgent evaluation was advised.",
   });
-  expect(run("prepare_demo_appointment", {
+  expect(await run("prepare_demo_appointment", {
     clinicianId: null, date: null, time: null, description: "Another checkup",
   })).toMatchObject({
     appointment: { clinicianId: "anna", date, time: "16:00" },
   });
 });
-it("keeps supplied preferences and rejects unavailable slots instead of silently replacing them", () => {
-  const { run, date } = scenario();
-  expect(run("prepare_demo_appointment", {
+it("keeps supplied preferences and rejects unavailable slots instead of silently replacing them", async () => {
+  const { run, date } = await scenario();
+  expect(await run("prepare_demo_appointment", {
     clinicianId: "maya", date, time: "17:15", description: "Checkup",
   })).toMatchObject({ appointment: { clinicianId: "maya", date, time: "17:15" } });
-  expect(run("prepare_demo_appointment", {
+  expect(await run("prepare_demo_appointment", {
     clinicianId: "maya", date, time: "09:00", description: "Checkup",
   })).toMatchObject({ status: "error" });
   expect(readDemoAppointments()).toEqual([]);
 });
-it("keeps different Google accounts and anonymous bookings separate in the same browser", () => {
+it("keeps different Google accounts and anonymous bookings separate in the same browser", async () => {
   const values = new Map<string, string>();
   const storage = {
     getItem: (key: string) => values.get(key) ?? null,

@@ -6,20 +6,20 @@ import { clinicians } from "@/lib/demo";
 import {
   appointmentDay,
   appointmentTimes,
-  bookDemoAppointment,
   formatAppointmentDate,
-  type DemoAppointment,
+  type Appointment,
 } from "@/lib/demo-appointments";
+import { bookAppointment, importBrowserAppointments } from "@/lib/appointments-client";
 
 export default function AppointmentPage() {
   const user = useCurrentUser();
-  const [booking, setBooking] = useState<DemoAppointment | null>(null);
+  const [booking, setBooking] = useState<Appointment | null>(null);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   return (
     <main className="appointment-form-page">
       <section className="appointment-form-card">
-        <h1>{booking ? "Demo appointment booked" : "Demo appointment"}</h1>
-        <p className="account-note">No real clinic is contacted.</p>
+        <h1>{booking ? "Appointment booked" : "Appointment"}</h1>
         {booking ? (
           <>
             <p className="appointment-form-summary">
@@ -42,26 +42,28 @@ export default function AppointmentPage() {
           </>
         ) : (
           <form
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
+              if (saving) return;
               setError("");
+              setSaving(true);
               const fields = new FormData(event.currentTarget);
               try {
-                setBooking(
-                  bookDemoAppointment({
-                    clinicianId: fields.get("doctor"),
-                    date: fields.get("date"),
-                    time: fields.get("time"),
-                    description: fields.get("description"),
-                  }, undefined, user.id),
-                );
+                try { await importBrowserAppointments(user.id); }
+                catch { /* A conflicting legacy record must not prevent a new booking. Appointments reports the import issue. */ }
+                setBooking(await bookAppointment({
+                  clinicianId: fields.get("doctor") as "anna" | "piotr" | "maya",
+                  date: String(fields.get("date")),
+                  time: fields.get("time") as "15:30" | "16:00" | "17:15",
+                  description: String(fields.get("description") ?? ""),
+                }, undefined, user.id));
               } catch (error) {
                 setError(
                   error instanceof Error
                     ? error.message
                     : "The appointment could not be saved.",
                 );
-              }
+              } finally { setSaving(false); }
             }}
           >
             <label htmlFor="appointment-doctor">Doctor</label>
@@ -102,8 +104,8 @@ export default function AppointmentPage() {
                 {error}
               </p>
             )}
-            <button className="button primary" type="submit">
-              Book demo appointment
+            <button className="button primary" type="submit" disabled={saving}>
+              {saving ? "Booking…" : "Book appointment"}
             </button>
             <Link className="appointment-back" href="/">
               Back to Milo

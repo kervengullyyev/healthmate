@@ -41,7 +41,7 @@ test("a forged session and an OAuth error never grant platform access", async ({
 signedInTest("session reads cannot reissue a cookie after concurrent sign-out", async ({ request }) => {
   const session = await request.get("/api/auth/session");
   expect(session.status()).toBe(200);
-  expect((await session.json()).user.id).toBe("google-test-alex");
+  expect((await session.json()).user.id).toMatch(/^google-test-alex-/);
   expect(session.headers()["set-cookie"]).toBeUndefined();
   const status = await request.get("/api/status");
   expect(status.status()).toBe(200);
@@ -70,13 +70,14 @@ signedInTest("sign-out ends voice, clears the session and protects browser back 
 });
 signedInTest("switching Google accounts does not expose the other account's bookings", async ({ page, context }) => {
   await page.goto("/appointments/new");
+  await page.getByLabel("Doctor", { exact: true }).selectOption("piotr");
   await page.getByLabel("Date", { exact: true }).fill(await page.evaluate(() => {
     const d = new Date(); d.setDate(d.getDate() + 1);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   }));
   await page.getByLabel("Description", { exact: true }).fill("Alex's private demo summary");
-  await page.getByRole("button", { name: "Book demo appointment", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Demo appointment booked", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Book appointment", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Appointment booked", exact: true })).toBeVisible();
   await fakeVoice(page, false);
   await page.route("**/api/session", route => route.fulfill({ json: { session: { id: "test" }, transport: { sdp: "answer" } } }));
   await page.goto("/");
@@ -98,7 +99,7 @@ signedInTest("switching Google accounts does not expose the other account's book
   await page.getByRole("button", { name: "Close panel" }).click();
   await page.getByRole("button", { name: "Open account menu" }).click();
   await page.getByRole("menuitem", { name: "Appointments", exact: true }).click();
-  await expect(page.getByRole("dialog", { name: "Appointments", exact: true })).toContainText("No booked appointments yet.");
+  await expect(page.getByRole("dialog", { name: "Appointments", exact: true })).toContainText("No appointments yet.");
   await expect(page.getByText("Alex's private demo summary")).toHaveCount(0);
   await page.getByRole("button", { name: "Close panel" }).click();
   await page.getByRole("button", { name: "Open account menu" }).click();

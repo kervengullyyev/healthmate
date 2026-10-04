@@ -1,4 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
+import { randomUUID } from "node:crypto";
+import { join } from "node:path";
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
@@ -20,6 +22,8 @@ export default defineConfig({
       AUTH_URL: "http://127.0.0.1:3001",
       AUTH_GOOGLE_ID: "test-google-client-id",
       AUTH_GOOGLE_SECRET: "test-google-client-secret",
+      OPENAI_API_KEY: "",
+      APPOINTMENTS_DB_PATH: join(process.cwd(), ".test-data", `${randomUUID()}.sqlite`),
     },
     timeout: 120000,
   },

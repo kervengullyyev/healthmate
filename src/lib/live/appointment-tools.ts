@@ -1,15 +1,21 @@
 import { z } from "zod";
 import {
-  bookDemoAppointment,
   appointmentDay,
   appointmentInputSchema,
   appointmentTimes,
-  readDemoAppointments,
   validateAppointment,
   type AppointmentInput,
 } from "../demo-appointments";
 import { clinicians } from "../demo";
 import type { TranscriptState } from "./events";
+import { bookAppointment, occupiedAppointments, importBrowserAppointments } from "../appointments-client";
+
+export type AppointmentBackend = {
+  occupied: typeof occupiedAppointments;
+  book: typeof bookAppointment;
+  initialise?: typeof importBrowserAppointments;
+};
+const serverBackend: AppointmentBackend = { occupied: occupiedAppointments, book: bookAppointment, initialise: importBrowserAppointments };
 
 const confirmationSchema = z
   .object({
@@ -22,23 +28,26 @@ const preparationSchema = appointmentInputSchema.extend({
   date: appointmentInputSchema.shape.date.nullish(),
   time: appointmentInputSchema.shape.time.nullish(),
 });
-function chooseAppointment(args: unknown, userId?: string): AppointmentInput {
+async function chooseAppointment(args: unknown, backend: AppointmentBackend, userId?: string, signal?: AbortSignal): Promise<AppointmentInput> {
   const requested = preparationSchema.parse(args);
   const clinicianId = requested.clinicianId ?? "anna";
   const dates = requested.date
     ? [requested.date]
     : Array.from({ length: 30 }, (_, index) => appointmentDay(index + 1));
   const times = requested.time ? [requested.time] : appointmentTimes;
-  const existing = readDemoAppointments(undefined, userId);
+  if (userId) {
+    try { await backend.initialise?.(userId); }
+    catch { /* Preserved browser records can be retried in Appointments; new bookings must remain available. */ }
+  }
+  const existing = await backend.occupied(signal);
   for (const date of dates)
     for (const time of times) {
       if (
-        (!requested.date || !requested.time) &&
         existing.some((item) => item.clinicianId === clinicianId && item.date === date && item.time === time)
       ) continue;
       return validateAppointment({ ...requested, clinicianId, date, time });
     }
-  throw new Error("No demo slots are available for those preferences. Choose another date or doctor.");
+  throw new Error("No appointment slots are available for those preferences. Choose another date or doctor.");
 }
 function normalise(text: string) {
   return text
@@ -91,7 +100,7 @@ function latestTurn(
   }
   return { start, end: latest.end, text };
 }
-export function createAppointmentTools(userId?: string) {
+export function createAppointmentTools(userId?: string, backend = serverBackend, signal?: AbortSignal) {
   let pending: {
     id: string;
     input: AppointmentInput;
@@ -115,15 +124,15 @@ export function createAppointmentTools(userId?: string) {
     )
       pending = null;
   }
-  function run(
+  async function run(
     name: string,
     raw: string,
     transcript: TranscriptState,
-  ): Record<string, unknown> {
+  ): Promise<Record<string, unknown>> {
     try {
       const args: unknown = JSON.parse(raw);
       if (name === "prepare_demo_appointment") {
-        const input = chooseAppointment(args, userId);
+        const input = await chooseAppointment(args, backend, userId, signal);
         const doctor = clinicians.find(
           (clinician) => clinician.id === input.clinicianId,
         )!;
@@ -134,13 +143,13 @@ export function createAppointmentTools(userId?: string) {
             0,
             ...transcript.fragments.map((part) => part.end),
           ),
-          question: `Would you like me to book a demo appointment with ${doctor.name} on ${input.date} at ${input.time}?`,
+          question: `Would you like me to book an appointment with ${doctor.name} on ${input.date} at ${input.time}?`,
         };
         return {
           status: "awaiting_confirmation",
           proposalId: pending.id,
           question: pending.question,
-          appointment: { ...input, doctor: doctor.name, demo: true },
+          appointment: { ...input, doctor: doctor.name },
           message:
             "Read the exact returned question as the final sentence of your next reply, then wait for the user's answer. Do not ask another question or book until they reply.",
         };
@@ -173,7 +182,7 @@ export function createAppointmentTools(userId?: string) {
           !affirmative(user.text)
         )
           return needsConfirmation();
-        const booking = bookDemoAppointment(pending.input, undefined, userId);
+        const booking = await backend.book(pending.input, signal, userId);
         pending = null;
         return {
           status: "booked",
@@ -184,7 +193,7 @@ export function createAppointmentTools(userId?: string) {
             )!.name,
           },
           message:
-            "The demo appointment is saved in the Appointments menu. No real clinic was contacted.",
+            "The appointment is booked in ontuc and appears under Appointments. The summary is stored with it. No external clinic has been notified.",
         };
       }
       return { status: "error", message: "That action is not supported." };
@@ -194,7 +203,7 @@ export function createAppointmentTools(userId?: string) {
         message:
           error instanceof Error
             ? error.message
-            : "The demo appointment could not be saved.",
+            : "The appointment could not be saved.",
       };
     }
   }

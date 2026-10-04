@@ -6,10 +6,8 @@ import { BookedAppointments } from "@/components/booked-appointments";
 import type { Message } from "@/lib/domain";
 import { useCurrentUser } from "@/components/platform-session";
 import { SignOutButton } from "@/components/sign-out-button";
-import {
-  readDemoAppointments,
-  type DemoAppointment,
-} from "@/lib/demo-appointments";
+import { type Appointment } from "@/lib/demo-appointments";
+import { importBrowserAppointments, listAppointments } from "@/lib/appointments-client";
 
 const sections = [
   { name: "Profile", Icon: UserRound },
@@ -30,7 +28,8 @@ export function AccountMenu({
   const [opening, setOpening] = useState(false);
   const [profileName, setProfileName] = useState(user.name ?? "");
   const [draftName, setDraftName] = useState("");
-  const [appointments, setAppointments] = useState<DemoAppointment[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [appointmentError, setAppointmentError] = useState("");
   const wrapper = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const menu = useRef<HTMLDivElement>(null);
@@ -56,7 +55,17 @@ export function AccountMenu({
     try {
       await beforeOpen();
       if (section === "Profile") setDraftName(profileName);
-      if (section === "Appointments") setAppointments(readDemoAppointments(undefined, user.id));
+      if (section === "Appointments") {
+        setAppointments([]);
+        setAppointmentError("");
+        try { await importBrowserAppointments(user.id); }
+        catch { setAppointmentError("Some earlier browser appointments could not be imported. The originals are preserved; you can still book and view server appointments."); }
+        try {
+          setAppointments(await listAppointments());
+        } catch (error) {
+          setAppointmentError(error instanceof Error ? error.message : "Appointments could not be loaded. Please try again.");
+        }
+      }
       setPanel(section);
     } finally {
       setOpening(false);
@@ -180,7 +189,10 @@ export function AccountMenu({
               </form>
             )}
             {panel === "Appointments" && (
-              <BookedAppointments appointments={appointments} />
+              <>
+                {appointmentError && <p role="alert">{appointmentError}</p>}
+                <BookedAppointments appointments={appointments} unavailable={Boolean(appointmentError)} />
+              </>
             )}
             {panel === "Records" && (
               <div className="account-records">

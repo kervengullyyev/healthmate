@@ -4,17 +4,18 @@ import { CalendarDays } from "lucide-react";
 import { clinicians } from "@/lib/demo";
 import {
   formatAppointmentDate,
-  type DemoAppointment,
+  type Appointment,
 } from "@/lib/demo-appointments";
 
 export function BookedAppointments({
   appointments,
+  unavailable = false,
 }: {
-  appointments: DemoAppointment[];
+  appointments: Appointment[];
+  unavailable?: boolean;
 }) {
   return (
     <div className="booked-appointments">
-      <p className="account-note">Demo bookings. No clinic is contacted.</p>
       {appointments.length ? (
         <ol>
           {[...appointments]
@@ -45,11 +46,11 @@ export function BookedAppointments({
               );
             })}
         </ol>
-      ) : (
-        <p className="appointments-empty">No booked appointments yet.</p>
-      )}
+      ) : !unavailable ? (
+        <p className="appointments-empty">No appointments yet.</p>
+      ) : null}
       <Link className="button primary" href="/appointments/new">
-        Book demo appointment
+        Book appointment
       </Link>
     </div>
   );

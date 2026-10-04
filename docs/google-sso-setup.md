@@ -48,7 +48,7 @@ Open [ontuc](http://127.0.0.1:3000/) and select **Continue with Google**. The ac
 ## 3. Test the configured login
 
 - Sign in with a configured test user. Open Profile and check the displayed account.
-- Book a synthetic appointment and confirm it appears in Appointments after refreshing.
+- Book an appointment and confirm it appears in Appointments after refreshing.
 - Start a conversation, then sign out. The microphone session should end and the login screen should appear. Browser Back must not reopen an authenticated platform page.
 - Sign in with a different account. It should have its own empty appointment list.
 - Open `/appointments/new` while signed out. After successful Google login, you should return to that form.
@@ -59,6 +59,6 @@ Automated checks exercise the Google authorization redirect and encrypted test s
 
 Sign-in requests only Google identity scopes: `openid`, `email`, and `profile`. It does not grant Calendar or Gmail access. Sessions use encrypted, HttpOnly cookies with a 24-hour lifetime.
 
-Appointments remain synthetic entries stored in the current browser, separated by Google account ID; they are not synchronized between devices or sent to a clinic. Earlier anonymous entries remain in browser storage and are not assigned to a signed-in account. Conversation records stay in memory and clear on refresh, sign-out or account change.
+Appointments and summaries are stored in server SQLite, separated by verified Google account ID and shared across signed-in devices. External clinics are not notified. Earlier account-specific browser records are imported without deleting originals; anonymous entries remain unassigned. See [SQLite operations](sqlite-appointments.md). Conversation records stay in memory and clear on refresh, sign-out or account change.
 
 For the Cloudflare deployment at ontuc.com, register the additional exact redirect URI `https://ontuc.com/api/auth/callback/google` and use `AUTH_URL=https://ontuc.com` plus `APP_ORIGIN=https://ontuc.com` in `.env.local`. The public origin is already configured in this working copy. Restart the production service after adding credentials, as described in [tunnel operations](cloudflare-tunnel.md). The loopback callback remains useful for separate local development.

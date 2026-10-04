@@ -17,10 +17,10 @@ test("completes the synthetic journey and preserves an editable printable doctor
   page,
 }) => {
   await samplePlan(page);
-  await page.getByRole("button", { name: "Explore demo appointments" }).click();
+  await page.getByRole("button", { name: "Explore appointments" }).click();
   await page.getByRole("button", { name: "Select Dr. Anna Kowalska" }).click();
-  await page.getByRole("button", { name: "Confirm demo appointment" }).click();
-  await expect(page.getByText("Your demo appointment is saved.")).toBeVisible();
+  await page.getByRole("button", { name: "Confirm appointment" }).click();
+  await expect(page.getByText("Your appointment is saved.")).toBeVisible();
   await page.getByRole("button", { name: "Prepare my doctor brief" }).click();
   const brief = page.getByRole("textbox", { name: "Doctor brief", exact: true });
   await brief.fill("Patient correction: headaches started three weeks ago.");
@@ -42,15 +42,16 @@ test("completes the synthetic journey and preserves an editable printable doctor
     page.getByText("Demo experience", { exact: true }),
   ).not.toBeVisible();
 });
-test("demo booking persists only as explicitly synthetic data", async ({
+test("appointment request persists only as explicitly synthetic data", async ({
   page,
 }) => {
   await samplePlan(page);
-  await page.getByRole("button", { name: "Explore demo appointments" }).click();
+  await page.getByRole("button", { name: "Explore appointments" }).click();
   await page.getByRole("button", { name: "Select Dr. Anna Kowalska" }).click();
-  await page.getByRole("button", { name: "Confirm demo appointment" }).click();
+  await page.getByRole("button", { name: "Confirm appointment" }).click();
   const keys = await page.evaluate(() => Object.keys(localStorage));
-  expect(keys).toEqual(["healthmate-demo-booking:google-test-alex"]);
+  expect(keys).toHaveLength(1);
+  expect(keys[0]).toMatch(/^healthmate-demo-booking:google-test-alex-/);
   await page.reload();
   await page.getByRole("button", { name: "Try a demo", exact: true }).click();
   for (let i = 0; i < 5; i++)
@@ -60,8 +61,8 @@ test("demo booking persists only as explicitly synthetic data", async ({
   await page
     .getByRole("button", { name: "Create my care plan", exact: true })
     .click();
-  await page.getByRole("button", { name: "Explore demo appointments" }).click();
-  await expect(page.getByText("Your demo appointment is saved.")).toBeVisible();
+  await page.getByRole("button", { name: "Explore appointments" }).click();
+  await expect(page.getByText("Your appointment is saved.")).toBeVisible();
 });
 test("failed live regeneration preserves patient corrections and shows the failure", async ({
   page,
@@ -149,7 +150,7 @@ test("an urgent result interrupts routine booking on mobile", async ({
     page.getByRole("heading", { name: "Please seek urgent medical help." }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Explore demo appointments" }),
+    page.getByRole("button", { name: "Explore appointments" }),
   ).not.toBeVisible();
   await expect(
     page.getByRole("button", { name: "Appointments", exact: true }),

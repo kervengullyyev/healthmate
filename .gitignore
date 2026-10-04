@@ -8,3 +8,8 @@ playwright-report/
 test-results/
 *.tsbuildinfo
 .DS_Store
+data/
+.test-data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

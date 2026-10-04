@@ -14,6 +14,12 @@ const appointmentSchema = appointmentInputSchema.extend({
   demo: z.literal(true),
 });
 export type AppointmentInput = z.infer<typeof appointmentInputSchema>;
+export const storedAppointmentSchema = appointmentInputSchema.extend({
+  id: z.string().min(1).max(120),
+  status: z.literal("booked"),
+  createdAt: z.string(),
+});
+export type Appointment = z.infer<typeof storedAppointmentSchema>;
 export type DemoAppointment = z.infer<typeof appointmentSchema>;
 const storageKey = "healthmate-demo-appointments";
 export function accountStorageKey(key: string, userId: string) {
@@ -83,7 +89,7 @@ export function bookDemoAppointment(
   )
     return existing;
   if (!existing && appointments.length >= 100)
-    throw new Error("The demo appointment list is full.");
+    throw new Error("The appointment list is full.");
   const booking: DemoAppointment = {
     ...input,
     id: existing?.id ?? crypto.randomUUID(),
