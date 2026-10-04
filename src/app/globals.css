@@ -2180,6 +2180,7 @@ main {
   .app-footer,
   .page-intro,
   .brief-grid,
+  .care-summary,
   .global-error,
   .skip-link {
     display: none !important;

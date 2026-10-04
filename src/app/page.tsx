@@ -56,8 +56,10 @@ export default function Page() {
     return () => controller.abort();
   }, []);
   useEffect(() => {
-    if (previousScreen.current !== state.screen)
-      document.getElementById("main")?.focus();
+    if (previousScreen.current !== state.screen) {
+      document.getElementById("main")?.focus({ preventScroll: true });
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
     previousScreen.current = state.screen;
   }, [state.screen]);
   useEffect(

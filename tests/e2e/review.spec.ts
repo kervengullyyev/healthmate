@@ -204,6 +204,7 @@ test("urgent regeneration preserves edits while replacing exported care guidance
     page.getByText("Dr. Anna Kowalska", { exact: true }),
   ).not.toBeVisible();
   await page.emulateMedia({ media: "print" });
+  await expect(page.locator(".care-summary")).not.toBeVisible();
   await expect(page.locator(".print-brief")).toContainText(
     "LATEST SUGGESTED CARE: URGENT EVALUATION",
   );
@@ -278,4 +279,22 @@ test("the interview budget preserves history and reserves room for plan correcti
   expect(
     payloads[1].some((m) => m.content.includes("Patient correction.")),
   ).toBe(true);
+});
+
+test("mobile navigation shows the new screen heading at the top", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Try a demo", exact: true }).click();
+  for (let i = 0; i < 5; i++)
+    await page
+      .getByRole("button", { name: "Use sample answer", exact: true })
+      .click();
+  await page.getByRole("button", { name: "Create my care plan" }).click();
+  await page.getByRole("button", { name: "Review my doctor brief" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Your story, ready to share." }),
+  ).toBeInViewport();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
 });
