@@ -118,7 +118,7 @@ test("plays and loops Milo's video during speech, then returns to the still avat
       controls: element.controls,
     })),
   ).toEqual({
-    src: "/videos/milo.mp4",
+    src: "/videos/milo.webm",
     muted: true,
     loop: true,
     inline: true,

@@ -49,7 +49,7 @@ export function Avatar({
       <video
         ref={video}
         className="mascot mascot-video"
-        src="/videos/milo.mp4"
+        src="/videos/milo.webm"
         loop
         muted
         playsInline
