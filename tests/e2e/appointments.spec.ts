@@ -110,7 +110,7 @@ test("a storage failure reports the error instead of claiming a booking", async 
   );
 });
 
-test("Milo books only after asking and hearing OK, and avoids duplicate bookings", async ({
+test("Milo saves natural-language agreement after asking and avoids duplicate bookings", async ({
   page,
 }) => {
   await voice(page);
@@ -146,12 +146,12 @@ test("Milo books only after asking and hearing OK, and avoids duplicate bookings
       ),
     date,
   );
-  await page.evaluate(() => window.voiceTest.message("user", "OK"));
+  await page.evaluate(() => window.voiceTest.message("user", "Sounds good, please book it for me."));
   const booked = await page.evaluate(
     (proposalId) =>
       window.voiceTest.tool("book_demo_appointment", {
         proposalId,
-        confirmation: "OK",
+        confirmation: "Sounds good, please book it for me.",
       }),
     proposal.proposalId,
   );
@@ -160,7 +160,7 @@ test("Milo books only after asking and hearing OK, and avoids duplicate bookings
     (proposalId) =>
       window.voiceTest.tool("book_demo_appointment", {
         proposalId,
-        confirmation: "OK",
+        confirmation: "Sounds good, please book it for me.",
       }),
     proposal.proposalId,
   );

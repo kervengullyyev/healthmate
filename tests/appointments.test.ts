@@ -98,6 +98,65 @@ it("accepts a natural affirmative reply to the specific appointment question", (
   ).toMatchObject({ status: "booked" });
   expect(readDemoAppointments()).toHaveLength(1);
 });
+it.each([
+  "Sounds good!",
+  "That sounds great to me.",
+  "That works for me, thanks.",
+  "Yes, please book it for me.",
+  "Sure, go ahead and book the appointment.",
+  "Please arrange it for me.",
+  "Can you book it for me?",
+  "I'd like that.",
+  "Let’s do it.",
+  "Absolutely, thank you.",
+  "Okay, please do.",
+  "Yes please, that’s fine.",
+])("books the confirmed slot after conversational agreement: %s", (reply) => {
+  const { say, run, proposal } = scenario();
+  say("assistant", proposal.question as string);
+  say("user", reply);
+  expect(run("book_demo_appointment", {
+    proposalId: proposal.proposalId,
+    confirmation: reply,
+  })).toMatchObject({ status: "booked" });
+  expect(readDemoAppointments()).toHaveLength(1);
+});
+it.each([
+  "No thanks.",
+  "Actually, don't book it.",
+  "Maybe, I'm not sure.",
+  "Yes, but not tomorrow.",
+  "Sounds good, but can we do another time?",
+  "Book it if it is free.",
+  "I guess yes.",
+  "Yes, I have headaches.",
+  "Not now, thanks.",
+  "Can you tell me more first?",
+])("does not book after refusal, uncertainty or a change: %s", (reply) => {
+  const { say, run, proposal } = scenario();
+  say("assistant", proposal.question as string);
+  say("user", reply);
+  expect(run("book_demo_appointment", {
+    proposalId: proposal.proposalId,
+    confirmation: reply,
+  })).toMatchObject({ status: "needs_confirmation" });
+  expect(readDemoAppointments()).toEqual([]);
+});
+it.each(["Actually, no thanks.", "Nope.", "Please don't book it.", "I'd rather not."])(
+  "clears the pending proposal after a natural refusal: %s",
+  (reply) => {
+    const { say, run, proposal } = scenario();
+    say("assistant", proposal.question as string);
+    say("user", reply);
+    say("assistant", proposal.question as string);
+    say("user", "Yes");
+    expect(run("book_demo_appointment", {
+      proposalId: proposal.proposalId,
+      confirmation: "Yes",
+    })).toMatchObject({ status: "needs_confirmation" });
+    expect(readDemoAppointments()).toEqual([]);
+  },
+);
 it("unavailable localStorage does not prevent reading the empty appointment list", () => {
   vi.stubGlobal("localStorage", undefined);
   Object.defineProperty(globalThis, "localStorage", {

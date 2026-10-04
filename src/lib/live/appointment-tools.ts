@@ -16,14 +16,26 @@ const confirmationSchema = z
 function normalise(text: string) {
   return text
     .toLowerCase()
-    .replace(/[.,!?]/g, "")
+    .replace(/[‘’]/g, "'")
+    .replace(/[.,!?;:]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
+const agreement = [
+  "yes|yeah|yep|yup|ok|okay|sure|alright|absolutely|certainly|of course",
+  "(?:(?:that|it|this) )?(?:sounds|looks) (?:good|great|fine|perfect)(?: to me)?",
+  "(?:that|it|this) works(?: for me)?",
+  "(?:that's|that is|it's|it is) (?:fine|good|great|perfect|okay|ok)(?: with me)?",
+  "go ahead|please do|let's do it|(?:i'd|i would) like that",
+  "(?:(?:can|could|would) you )?(?:book|schedule|arrange|make|take) (?:it|that|this|(?:the|an|a) (?:demo )?appointment|the booking)(?: for me)?",
+].join("|");
+// Match the entire reply, including combined agreement and polite fillers.
+// Conditions, changed slots and unrelated trailing details require clarification.
+const affirmativeReply = new RegExp(
+  `^(?:please )?(?:${agreement})(?: (?:and )?(?:please )?(?:${agreement}))*(?: (?:please|thanks|thank you))?$`,
+);
 function affirmative(text: string) {
-  return /^(?:(?:yes|yeah|yep|ok|okay|sure|alright)(?: please)?(?: (?:go ahead|that works|book (?:it|that|the appointment)))?|go ahead|please do|book it|please book it)$/.test(
-    normalise(text),
-  );
+  return affirmativeReply.test(normalise(text));
 }
 function latestTurn(
   transcript: TranscriptState,
@@ -63,7 +75,7 @@ export function createAppointmentTools() {
     status: "needs_confirmation",
     question: pending?.question,
     message: pending
-      ? "Ask the exact returned question as your final sentence, then wait for a fresh clear yes or OK. Do not use consent to any other question."
+      ? "Ask the exact returned appointment question as your final sentence, then wait for fresh clear agreement in the user's own words, such as sounds good, go ahead, or please book it for me. Refusal, uncertainty or changes require clarification. Do not use consent to any other question."
       : "No active appointment proposal. Do not book. Respect any refusal; prepare a new slot only if the user wants one.",
   });
   function observe(transcript: TranscriptState) {
@@ -72,7 +84,7 @@ export function createAppointmentTools() {
       pending &&
       user &&
       user.start > pending.frontier &&
-      /^(no\b|cancel\b|not now\b|don't\b|do not\b)/.test(normalise(user.text))
+      /^(?:(?:actually|sorry|well) )?(?:please )?(?:no\b|nope\b|nah\b|cancel\b|not now\b|don't\b|do not\b|i (?:don't|do not)\b|i(?:'d| would) rather not\b)/.test(normalise(user.text))
     )
       pending = null;
   }

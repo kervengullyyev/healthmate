@@ -47,7 +47,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-On 4 October 2026: 29 unit tests and 25 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified**; automated checks use mocked live audio and upstream calls, with actual browser playback of the supplied speaking video. See [verification evidence](docs/verification.md).
+On 4 October 2026: 55 unit tests and 25 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified**; automated checks use mocked live audio and upstream calls, with actual browser playback of the supplied speaking video. See [verification evidence](docs/verification.md).
 
 ## Prototype boundaries
 
@@ -63,4 +63,4 @@ The demo is fixed; it does not interpret custom symptoms. Print/save PDF uses th
 
 [90-second demo script](docs/demo-script.md) · [AI and resource disclosures](docs/ai-and-resources.md) · [Approved design](docs/superpowers/specs/2026-10-04-healthmate-design.md)
 
-Voice booking currently accepts clear English confirmations such as yes, OK, and yes that works. The confirmation question includes the exact doctor/date/time; unrelated questions or stale replies cannot approve it. Other replies require clarification. Actual account-backed model speech/tool timing remains unverified.
+Voice booking accepts clear conversational English agreement such as sounds good, that works for me, go ahead, and please book it for me, including polite or combined replies. Literal yes or no is not required. Natural refusals clear the proposal; uncertainty, conditions and changed slots need clarification. The confirmation question includes the exact doctor/date/time; unrelated questions or stale replies cannot approve it. Actual account-backed model speech/tool timing remains unverified.
