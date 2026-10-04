@@ -2319,10 +2319,14 @@ main {
 .appointment-form-card h1 { margin-bottom: 14px; font-size: 26px; letter-spacing: -0.7px; }
 .appointment-form-card form { display: flex; flex-direction: column; gap: 12px; }
 .appointment-form-card label { font-size: 14px; font-weight: 600; margin-top: 8px; }
-.appointment-form-card input, .appointment-form-card select { width: 100%; min-width: 0; min-height: 46px; padding: 12px; border: 1px solid #dce6dd; border-radius: 12px; background: white; color: var(--ink); font: inherit; }
+.appointment-form-card input, .appointment-form-card select, .appointment-form-card textarea { width: 100%; min-width: 0; min-height: 46px; padding: 12px; border: 1px solid #dce6dd; border-radius: 12px; background: white; color: var(--ink); font: inherit; }
 .appointment-form-card select:focus-visible { outline: 3px solid #a6c8b4; outline-offset: 4px; }
 .appointment-form-card form .button { margin-top: 14px; }
 .appointment-back { align-self: center; padding: 8px; font-size: 13px; color: var(--teal); }
 .appointment-form-summary { margin: 24px 0; line-height: 1.9; }
 .appointment-form-error { margin-top: 8px; color: #925047; font-size: 13px; line-height: 1.6; }
 @media (max-width: 650px) { .appointment-form-card { padding: 24px; } }
+
+.appointment-form-card textarea { resize: vertical; line-height: 1.6; }
+.appointment-description { margin: 16px 0 24px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.7; color: #66765e; }
+.booked-appointments li p.appointment-description { margin-top: 14px; margin-bottom: 0; }

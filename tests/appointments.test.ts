@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { createAppointmentTools } from "../src/lib/live/appointment-tools";
 import {
   appointmentDay,
+  bookDemoAppointment,
   readDemoAppointments,
 } from "../src/lib/demo-appointments";
 import { applyTranscript, emptyTranscript } from "../src/lib/live/events";
@@ -48,6 +49,23 @@ it("cannot use consent to an unrelated question to book the prepared appointment
     }),
   ).toMatchObject({ status: "needs_confirmation" });
   expect(readDemoAppointments()).toEqual([]);
+});
+
+it("adds a summary to an existing slot without duplicating the booking or erasing it on an empty retry", () => {
+  scenario();
+  const slot = { clinicianId: "anna", date: appointmentDay(1), time: "15:30" };
+  const first = bookDemoAppointment(slot);
+  const updated = bookDemoAppointment({
+    ...slot,
+    description: "  Patient reports headaches. Cause unknown.  ",
+  });
+  expect(updated.id).toBe(first.id);
+  expect(updated.description).toBe("Patient reports headaches. Cause unknown.");
+  bookDemoAppointment(slot);
+  expect(readDemoAppointments()).toHaveLength(1);
+  expect(readDemoAppointments()[0].description).toBe(
+    "Patient reports headaches. Cause unknown.",
+  );
 });
 it("cannot reuse appointment consent after the assistant changes the question", () => {
   const { say, run, proposal, date } = scenario();

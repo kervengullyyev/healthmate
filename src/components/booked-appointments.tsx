@@ -35,6 +35,11 @@ export function BookedAppointments({
                       {appointment.time}
                     </p>
                     <span>{doctor.format} · Booked</span>
+                    {appointment.description && (
+                      <p className="appointment-description">
+                        {appointment.description}
+                      </p>
+                    )}
                   </div>
                 </li>
               );

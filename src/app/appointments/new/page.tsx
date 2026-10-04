@@ -31,6 +31,9 @@ export default function AppointmentPage() {
               <br />
               {formatAppointmentDate(booking.date)} · {booking.time}
             </p>
+            {booking.description && (
+              <p className="appointment-description">{booking.description}</p>
+            )}
             <Link className="button primary" href="/">
               Back to Milo
             </Link>
@@ -47,6 +50,7 @@ export default function AppointmentPage() {
                     clinicianId: fields.get("doctor"),
                     date: fields.get("date"),
                     time: fields.get("time"),
+                    description: fields.get("description"),
                   }),
                 );
               } catch (error) {
@@ -83,6 +87,14 @@ export default function AppointmentPage() {
                 </option>
               ))}
             </select>
+            <label htmlFor="appointment-description">Description</label>
+            <textarea
+              name="description"
+              id="appointment-description"
+              rows={4}
+              maxLength={1500}
+              placeholder="Reason for the appointment or Milo’s summary"
+            />
             {error && (
               <p className="appointment-form-error" role="alert">
                 {error}

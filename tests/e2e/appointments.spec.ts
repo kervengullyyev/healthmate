@@ -47,6 +47,11 @@ test("the small form creates bookings that survive refresh in Appointments", asy
   await page.getByLabel("Date", { exact: true }).fill(await tomorrow(page));
   await page.getByLabel("Time", { exact: true }).selectOption("17:15");
   await page
+    .getByLabel("Description", { exact: true })
+    .fill(
+      "Recurring evening headaches for two weeks. I would like a GP consultation.",
+    );
+  await page
     .getByRole("button", { name: "Book demo appointment", exact: true })
     .click();
   await expect(
@@ -55,8 +60,14 @@ test("the small form creates bookings that survive refresh in Appointments", asy
   await page.getByRole("link", { name: "Back to Milo" }).click();
   await expect(await appointments(page)).toContainText("Dr. Maya Zielińska");
   await expect(panel).toContainText("17:15");
+  await expect(panel).toContainText(
+    "Recurring evening headaches for two weeks. I would like a GP consultation.",
+  );
   await page.reload();
   await expect(await appointments(page)).toContainText("Dr. Maya Zielińska");
+  await expect(panel).toContainText(
+    "Recurring evening headaches for two weeks. I would like a GP consultation.",
+  );
   await panel.getByRole("link", { name: "Book demo appointment" }).click();
   await page.getByLabel("Date", { exact: true }).fill(await tomorrow(page));
   await page.getByLabel("Time", { exact: true }).selectOption("16:00");
@@ -116,6 +127,8 @@ test("Milo books only after asking and hearing OK, and avoids duplicate bookings
         clinicianId: "anna",
         date,
         time: "15:30",
+        description:
+          "Patient reports recurring headaches and wants a routine GP consultation. Cause is unknown.",
       }),
     date,
   );
@@ -154,6 +167,9 @@ test("Milo books only after asking and hearing OK, and avoids duplicate bookings
   const panel = await appointments(page);
   await expect(panel).toContainText("Dr. Anna Kowalska");
   await expect(panel).toContainText("15:30");
+  await expect(panel).toContainText(
+    "Patient reports recurring headaches and wants a routine GP consultation. Cause is unknown.",
+  );
   await expect(panel.getByRole("listitem")).toHaveCount(1);
 });
 

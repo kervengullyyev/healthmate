@@ -6,6 +6,7 @@ export const appointmentInputSchema = z
     clinicianId: z.enum(["anna", "piotr", "maya"]),
     date: z.iso.date(),
     time: z.enum(appointmentTimes),
+    description: z.string().trim().max(1500).default(""),
   })
   .strict();
 const appointmentSchema = appointmentInputSchema.extend({
@@ -70,16 +71,23 @@ export function bookDemoAppointment(
       item.date === input.date &&
       item.time === input.time,
   );
-  if (existing) return existing;
-  if (appointments.length >= 100)
+  if (
+    existing &&
+    (!input.description || input.description === existing.description)
+  )
+    return existing;
+  if (!existing && appointments.length >= 100)
     throw new Error("The demo appointment list is full.");
   const booking: DemoAppointment = {
     ...input,
-    id: crypto.randomUUID(),
+    id: existing?.id ?? crypto.randomUUID(),
     demo: true,
   };
   try {
-    target.setItem(storageKey, JSON.stringify([...appointments, booking]));
+    const next = existing
+      ? appointments.map((item) => (item.id === existing.id ? booking : item))
+      : [...appointments, booking];
+    target.setItem(storageKey, JSON.stringify(next));
   } catch {
     throw new Error(
       "The appointment could not be saved. Allow browser storage and try again.",
