@@ -27,3 +27,5 @@ UI revision: user explicitly requests only Milo and a Talk to Milo button. Bound
 UI revision complete: minimal root avatar/one-button voice screen; 5 new browser checks observed RED→GREEN. Complete journey retained at /journey. Final checks: 23/23 unit, 16/16 browser, lint, typecheck and production build pass. Desktop/mobile minimal screenshots inspected.
 Finish: keep codex/healthmate as the local deliverable; no remote is configured and no merge, push or deployment was requested.
 Deferred minors: none.
+
+Video revision: user supplied public/videos/milo.mp4 and requested speech playback with looping. Avatar now plays the native clip muted/inline during detected speech, bridges 250 ms gaps between words, pauses/rewinds during silence and falls back to the original still image if playback fails. Native browser playback/looping regression observed RED→GREEN. Final verification: 23 unit/17 browser checks plus lint, typecheck and build pass. Server configuration status now true; no account-backed voice claim made.

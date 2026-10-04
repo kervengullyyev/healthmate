@@ -79,3 +79,70 @@ test("unconfigured voice reports a short error without requesting the microphone
   ).toContainText("Milo’s voice isn’t configured yet.");
   await expect(page.getByRole("button")).toHaveCount(1);
 });
+
+test("plays and loops Milo's video during speech, then returns to the still avatar", async ({
+  page,
+}, testInfo) => {
+  await fakeVoice(page, false, true);
+  await page.route("**/api/session", (route) =>
+    route.fulfill({ json: { transport: { sdp: "answer" } } }),
+  );
+  await page.goto("/");
+  await page.getByRole("button", { name: "Talk to Milo", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "End conversation", exact: true }),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    window.voiceTest.speaking = true;
+  });
+  const video = page.locator(".avatar video");
+  await expect(video).toHaveCount(1);
+  await expect
+    .poll(() =>
+      video.evaluate(
+        (element: HTMLVideoElement) =>
+          !element.paused && element.currentTime > 0,
+      ),
+    )
+    .toBe(true);
+  await expect(video).toHaveCSS("opacity", "1");
+  await page.screenshot({ path: testInfo.outputPath("milo-speaking.png") });
+  expect(
+    await video.evaluate((element: HTMLVideoElement) => ({
+      src: new URL(element.currentSrc).pathname,
+      muted: element.muted,
+      loop: element.loop,
+      inline: element.playsInline,
+      controls: element.controls,
+    })),
+  ).toEqual({
+    src: "/videos/milo.mp4",
+    muted: true,
+    loop: true,
+    inline: true,
+    controls: false,
+  });
+  await video.evaluate((element: HTMLVideoElement) => {
+    element.currentTime = element.duration - 0.15;
+  });
+  await expect
+    .poll(() =>
+      video.evaluate(
+        (element: HTMLVideoElement) =>
+          element.currentTime < 1 && !element.paused,
+      ),
+    )
+    .toBe(true);
+  await page.evaluate(() => {
+    window.voiceTest.speaking = false;
+  });
+  await expect
+    .poll(() => video.evaluate((element: HTMLVideoElement) => element.paused))
+    .toBe(true);
+  await expect(video).toHaveCSS("opacity", "0");
+  await expect(page.locator(".avatar img")).toHaveCSS("opacity", "1");
+  await page
+    .getByRole("button", { name: "End conversation", exact: true })
+    .click();
+  await expect(page.getByRole("button")).toHaveCount(1);
+});

@@ -21,3 +21,5 @@ Next.js, React, TypeScript, Zod, Lucide React, Vitest, Testing Library, ESLint a
 ## Limits and data handling
 
 No real booking, payment, message to clinicians or other external action occurs. The generated plan is a suggestion, with uncertainty and unknown information shown. There is no app-side raw audio recording or health-data logging. Live data stays in memory in the app, while OpenAI processes the audio/text required for live operation; server Responses calls request `store: false`. Only sample booking data persists locally in demo mode. Public deployment, real clinic integration, clinical validation and authentication are outside this build.
+
+The speaking animation in `public/videos/milo.mp4` was supplied by the user. Its generation tool and provenance have not been inferred. The app plays it muted alongside OpenAI voice audio and loops it during longer responses.

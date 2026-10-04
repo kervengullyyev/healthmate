@@ -1,6 +1,6 @@
 # HealthMate
 
-A hackathon health companion with a minimal main screen: Milo and one **Talk to Milo** button. Click to start voice; the same button cancels setup or ends the conversation.
+A hackathon health companion with a minimal main screen: Milo and one **Talk to Milo** button. Click to start voice; the same button cancels setup or ends the conversation. While Milo speaks, the supplied `public/videos/milo.mp4` plays muted and loops for longer responses; the still avatar returns during silence.
 
 The complete care-plan, sample appointment and editable doctor-brief journey remains available at `/journey`. Clinicians and appointment slots are synthetic samples.
 
@@ -47,7 +47,7 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-On 4 October 2026: 23 unit tests and 16 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified** because a configured project key was not available during these checks. See [verification evidence](docs/verification.md).
+On 4 October 2026: 23 unit tests and 17 browser tests passed; lint, typecheck and production build passed. Browser checks cover the complete sample journey, edit preservation after upstream errors, urgent routing, mode isolation, mobile widths and keyboard access. Live transport tests use fake media and upstream calls. Actual account-backed voice/audio, interruptions and captions remain **unverified**; automated checks use mocked live audio and upstream calls, with actual browser playback of the supplied speaking video. See [verification evidence](docs/verification.md).
 
 ## Prototype boundaries
 

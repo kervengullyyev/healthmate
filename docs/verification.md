@@ -3,10 +3,10 @@
 Verified locally on Node.js 22, macOS and Chromium.
 
 - Unit suite: 23/23 passing across domain validation, session isolation, API boundaries and fake WebRTC lifecycle.
-- Browser suite: 16/16 passing, including the five-screen demo, editable brief, print media, local demo booking persistence, failed plan regeneration, urgent mobile routing, keyboard entry, real local API origin validation, navigation during microphone acquisition, active voice closing, urgent exports and the interview budget.
+- Browser suite: 17/17 passing, including the five-screen demo, editable brief, print media, local demo booking persistence, failed plan regeneration, urgent mobile routing, keyboard entry, real local API origin validation, navigation during microphone acquisition, active voice closing, urgent exports and the interview budget.
 - Production build, ESLint and TypeScript: passing.
 - Visual inspection: desktop and 390-pixel mobile home, conversation, care plan, appointments and doctor brief. Avatar transparency, overflow, focus and text contrast checked.
-- Live account-backed microphone/audio, interruption handling and real captions: unverified pending a configured project API key. Mocked tests verify the protocol and resource lifecycle, not actual model audio.
+- Live account-backed microphone/audio, interruption handling and real captions: unverified in this change. The server now reports a configured project key, but these checks used mocked live audio and upstream requests. Mocked tests verify the protocol and resource lifecycle, not actual model audio.
 
 The app runs locally at http://127.0.0.1:3000. It has not been deployed or connected to real clinics.
 
@@ -17,3 +17,5 @@ Independent review found four Important issues, all fixed with regressions obser
 Final visual regressions also covered: mobile navigation resets to the new screen heading without losing keyboard focus, and print suppresses the duplicate on-screen guidance panel. Both regressions were observed failing, then passing after fixes.
 
 Latest user revision: the main screen now contains only Milo and one voice button. Five browser checks verify minimal content, mobile fit, start/end, cancellation of late microphone acquisition and configuration errors. The complete journey remains at `/journey` and retains its regression suite. [Minimal mobile screen](screenshots/home-mobile.png).
+
+Speaking video: actual Chromium playback of `/videos/milo.mp4` verified with mocked live audio amplitude, including native looping at the clip boundary, muted inline playback, and pause/return to the still avatar during silence. The supplied clip is 10.005 seconds, 720 × 1280, H.264/AAC; its own audio remains muted.

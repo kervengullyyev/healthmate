@@ -433,6 +433,17 @@ main {
   width: 200px;
   height: 205px;
 }
+.mascot-image { opacity: 1; }
+.mascot-video {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  animation: none;
+  filter: none;
+  pointer-events: none;
+}
+.avatar-video-active .mascot-video { opacity: 1; }
+.avatar-video-active .mascot-image { opacity: 0; }
 .avatar-orbit {
   position: absolute;
   inset: 20%;
