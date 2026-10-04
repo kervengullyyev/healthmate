@@ -209,3 +209,17 @@ it("keeps supplied preferences and rejects unavailable slots instead of silently
   })).toMatchObject({ status: "error" });
   expect(readDemoAppointments()).toEqual([]);
 });
+it("keeps different Google accounts and anonymous bookings separate in the same browser", () => {
+  const values = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  };
+  const slot = { clinicianId: "anna", date: appointmentDay(1), time: "15:30" };
+  bookDemoAppointment({ ...slot, description: "Anonymous old booking" }, storage);
+  expect(readDemoAppointments(storage, "google-alice")).toEqual([]);
+  bookDemoAppointment({ ...slot, description: "Alice's summary" }, storage, "google-alice");
+  expect(readDemoAppointments(storage, "google-alice")[0].description).toBe("Alice's summary");
+  expect(readDemoAppointments(storage, "google-bob")).toEqual([]);
+  expect(readDemoAppointments(storage)[0].description).toBe("Anonymous old booking");
+});

@@ -22,14 +22,14 @@ const preparationSchema = appointmentInputSchema.extend({
   date: appointmentInputSchema.shape.date.nullish(),
   time: appointmentInputSchema.shape.time.nullish(),
 });
-function chooseAppointment(args: unknown): AppointmentInput {
+function chooseAppointment(args: unknown, userId?: string): AppointmentInput {
   const requested = preparationSchema.parse(args);
   const clinicianId = requested.clinicianId ?? "anna";
   const dates = requested.date
     ? [requested.date]
     : Array.from({ length: 30 }, (_, index) => appointmentDay(index + 1));
   const times = requested.time ? [requested.time] : appointmentTimes;
-  const existing = readDemoAppointments();
+  const existing = readDemoAppointments(undefined, userId);
   for (const date of dates)
     for (const time of times) {
       if (
@@ -91,7 +91,7 @@ function latestTurn(
   }
   return { start, end: latest.end, text };
 }
-export function createAppointmentTools() {
+export function createAppointmentTools(userId?: string) {
   let pending: {
     id: string;
     input: AppointmentInput;
@@ -123,7 +123,7 @@ export function createAppointmentTools() {
     try {
       const args: unknown = JSON.parse(raw);
       if (name === "prepare_demo_appointment") {
-        const input = chooseAppointment(args);
+        const input = chooseAppointment(args, userId);
         const doctor = clinicians.find(
           (clinician) => clinician.id === input.clinicianId,
         )!;
@@ -173,7 +173,7 @@ export function createAppointmentTools() {
           !affirmative(user.text)
         )
           return needsConfirmation();
-        const booking = bookDemoAppointment(pending.input);
+        const booking = bookDemoAppointment(pending.input, undefined, userId);
         pending = null;
         return {
           status: "booked",

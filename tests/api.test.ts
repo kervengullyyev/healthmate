@@ -3,6 +3,9 @@ import { POST as session } from "../src/app/api/session/route";
 import { POST as chat } from "../src/app/api/chat/route";
 import { POST as plan } from "../src/app/api/plan/route";
 import { callOpenAI } from "../src/lib/server/openai";
+import { GET as status } from "../src/app/api/status/route";
+import { auth } from "../src/auth";
+vi.mock("../src/auth", () => ({ auth: vi.fn() }));
 function request(
   path: string,
   body: unknown,
@@ -23,6 +26,16 @@ const messages = [
 ];
 beforeEach(() => {
   vi.stubEnv("OPENAI_API_KEY", "test-key");
+  vi.mocked(auth).mockResolvedValue({ user: { id: "google-test-user", email: "alex@example.test" }, expires: "2099-01-01" } as never);
+});
+it("rejects signed-out users at each AI handler before reading data or calling OpenAI", async () => {
+  vi.mocked(auth).mockResolvedValue(null as never);
+  const upstream = vi.fn();
+  vi.stubGlobal("fetch", upstream);
+  for (const handler of [chat, plan, session])
+    expect((await handler(request("protected", {}))).status).toBe(401);
+  expect((await status()).status).toBe(401);
+  expect(upstream).not.toHaveBeenCalled();
 });
 afterEach(() => {
   vi.unstubAllEnvs();

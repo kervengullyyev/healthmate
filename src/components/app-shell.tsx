@@ -12,6 +12,8 @@ import {
   Leaf,
 } from "lucide-react";
 import type { Mode, Screen } from "@/lib/domain";
+import { useCurrentUser } from "@/components/platform-session";
+import { SignOutButton } from "@/components/sign-out-button";
 const navigation = [
   { id: "home", name: "Overview", icon: House },
   { id: "conversation", name: "My conversation", icon: MessageCircle },
@@ -26,6 +28,7 @@ export function AppShell({
   urgent = false,
   onNavigate,
   onReset,
+  beforeSignOut,
   children,
 }: {
   screen: Screen;
@@ -34,8 +37,10 @@ export function AppShell({
   urgent?: boolean;
   onNavigate: (screen: Screen) => void;
   onReset: () => void;
+  beforeSignOut: () => Promise<void>;
   children: React.ReactNode;
 }) {
+  const user = useCurrentUser();
   return (
     <div className="app-layout">
       <a href="#main" className="skip-link">
@@ -88,10 +93,11 @@ export function AppShell({
           <div className="profile">
             <span className="profile-icon">Y</span>
             <div>
-              <strong>Your personal space</strong>
-              <span>No account needed</span>
+              <strong>{user.name ?? "Your personal space"}</strong>
+              <span>Signed in with Google</span>
             </div>
           </div>
+          <SignOutButton beforeSignOut={beforeSignOut} />
         </div>
       </aside>
       <div className="workspace">

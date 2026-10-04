@@ -18,8 +18,11 @@ import {
 import { clinicians, demoAnswers, demoPlan, getDemoReply } from "@/lib/demo";
 import { useLive } from "@/hooks/use-live";
 import { canAddExchange, shouldFinishVoice } from "@/lib/conversation-budget";
-const bookingKey = "healthmate-demo-booking";
+import { useCurrentUser } from "@/components/platform-session";
+import { accountStorageKey } from "@/lib/demo-appointments";
 export default function Page() {
+  const user = useCurrentUser();
+  const bookingKey = accountStorageKey("healthmate-demo-booking", user.id);
   const [state, dispatch] = useReducer(sessionReducer, "live", createSession);
   const [configured, setConfigured] = useState<boolean | null>(null),
     [pending, setPending] = useState(false),
@@ -306,6 +309,7 @@ export default function Page() {
       urgent={state.plan?.urgency === "urgent"}
       onNavigate={navigate}
       onReset={() => void reset()}
+      beforeSignOut={async () => { cancelRequests(); await live.end(); }}
     >
       {displayedError && state.screen !== "home" && (
         <div className="global-error error-banner" role="alert">

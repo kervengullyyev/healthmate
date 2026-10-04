@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../helpers/authenticated";
 import { fakeVoice } from "../helpers/fake-voice";
 
 test("keeps Milo centered with one voice action and a compact account icon", async ({

@@ -20,7 +20,7 @@ type Callbacks = {
   onSpeaking: (value: boolean) => void;
   onPlaybackBlocked?: (value: boolean) => void;
 };
-export function createLiveConnection(callbacks: Callbacks) {
+export function createLiveConnection(callbacks: Callbacks, userId?: string) {
   let peer: RTCPeerConnection | null = null,
     channel: RTCDataChannel | null = null,
     microphone: MediaStream | null = null,
@@ -47,7 +47,7 @@ export function createLiveConnection(callbacks: Callbacks) {
     string,
     { call: FunctionCall; output: Record<string, unknown> }
   >();
-  let appointmentTools = createAppointmentTools();
+  let appointmentTools = createAppointmentTools(userId);
   // GPT-Live forwards Responses events in an envelope. Calls are collected
   // from output_item.done; completed.output is intentionally empty.
   // https://developers.openai.com/api/docs/guides/live-delegation
@@ -247,7 +247,7 @@ export function createLiveConnection(callbacks: Callbacks) {
     finalised = false;
     closePromise = null;
     transcript = emptyTranscript();
-    appointmentTools = createAppointmentTools();
+    appointmentTools = createAppointmentTools(userId);
     results.clear();
     const token = ++generation;
     callbacks.onStatus("connecting");

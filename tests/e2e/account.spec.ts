@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../helpers/authenticated";
 import { fakeVoice } from "../helpers/fake-voice";
 
 test("account menu opens its three sections and saves the session profile", async ({
@@ -11,6 +11,7 @@ test("account menu opens its three sections and saves the session profile", asyn
     "Profile",
     "Appointments",
     "Records",
+    "Sign out",
   ]);
   await menu.getByRole("menuitem", { name: "Profile", exact: true }).click();
   const profile = page.getByRole("dialog", { name: "Profile", exact: true });

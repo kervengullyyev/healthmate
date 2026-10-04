@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../helpers/authenticated";
 import { fakeVoice } from "../helpers/fake-voice";
 
 test("the documented local origin reaches real API validation without calling AI", async ({

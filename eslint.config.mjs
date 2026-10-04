@@ -6,6 +6,7 @@ export default defineConfig([
   ...nextTs,
   globalIgnores([
     ".next/**",
+    ".next-e2e/**",
     ".superpowers/**",
     "test-results/**",
     "playwright-report/**",

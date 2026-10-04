@@ -16,6 +16,10 @@ const appointmentSchema = appointmentInputSchema.extend({
 export type AppointmentInput = z.infer<typeof appointmentInputSchema>;
 export type DemoAppointment = z.infer<typeof appointmentSchema>;
 const storageKey = "healthmate-demo-appointments";
+export function accountStorageKey(key: string, userId: string) {
+  if (!userId.trim()) throw new Error("Sign in with Google to continue.");
+  return `${key}:${encodeURIComponent(userId)}`;
+}
 type BookingStorage = Pick<Storage, "getItem" | "setItem">;
 
 export function appointmentDay(offset = 0, now = new Date()) {
@@ -38,10 +42,11 @@ export function validateAppointment(
 }
 export function readDemoAppointments(
   storage?: BookingStorage,
+  userId?: string,
 ): DemoAppointment[] {
   try {
     const target = storage ?? localStorage;
-    const saved: unknown = JSON.parse(target.getItem(storageKey) ?? "[]");
+    const saved: unknown = JSON.parse(target.getItem(userId ? accountStorageKey(storageKey, userId) : storageKey) ?? "[]");
     if (!Array.isArray(saved)) return [];
     return saved.slice(0, 100).flatMap((value) => {
       const result = appointmentSchema.safeParse(value);
@@ -54,6 +59,7 @@ export function readDemoAppointments(
 export function bookDemoAppointment(
   value: unknown,
   storage?: BookingStorage,
+  userId?: string,
 ): DemoAppointment {
   const input = validateAppointment(value);
   let target: BookingStorage;
@@ -64,7 +70,7 @@ export function bookDemoAppointment(
       "The appointment could not be saved. Allow browser storage and try again.",
     );
   }
-  const appointments = readDemoAppointments(target);
+  const appointments = readDemoAppointments(target, userId);
   const existing = appointments.find(
     (item) =>
       item.clinicianId === input.clinicianId &&
@@ -87,7 +93,7 @@ export function bookDemoAppointment(
     const next = existing
       ? appointments.map((item) => (item.id === existing.id ? booking : item))
       : [...appointments, booking];
-    target.setItem(storageKey, JSON.stringify(next));
+    target.setItem(userId ? accountStorageKey(storageKey, userId) : storageKey, JSON.stringify(next));
   } catch {
     throw new Error(
       "The appointment could not be saved. Allow browser storage and try again.",

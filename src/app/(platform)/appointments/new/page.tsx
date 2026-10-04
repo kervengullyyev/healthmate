@@ -1,4 +1,5 @@
 "use client";
+import { useCurrentUser } from "@/components/platform-session";
 import Link from "next/link";
 import { useState } from "react";
 import { clinicians } from "@/lib/demo";
@@ -11,6 +12,7 @@ import {
 } from "@/lib/demo-appointments";
 
 export default function AppointmentPage() {
+  const user = useCurrentUser();
   const [booking, setBooking] = useState<DemoAppointment | null>(null);
   const [error, setError] = useState("");
   return (
@@ -51,7 +53,7 @@ export default function AppointmentPage() {
                     date: fields.get("date"),
                     time: fields.get("time"),
                     description: fields.get("description"),
-                  }),
+                  }, undefined, user.id),
                 );
               } catch (error) {
                 setError(

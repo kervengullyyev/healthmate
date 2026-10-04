@@ -2,7 +2,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createLiveConnection, type LiveStatus } from "@/lib/live/connection";
 import type { Message } from "@/lib/domain";
+import { useCurrentUser } from "@/components/platform-session";
 export function useLive(onTranscript: (messages: Message[]) => void) {
+  const user = useCurrentUser();
   const [status, setStatus] = useState<LiveStatus>("idle"),
     [error, setError] = useState(""),
     [speaking, setSpeaking] = useState(false),
@@ -31,10 +33,10 @@ export function useLive(onTranscript: (messages: Message[]) => void) {
       onSpeaking: setSpeaking,
       onTranscript: (messages) => transcriptHandler.current(messages),
       onPlaybackBlocked: setPlaybackBlocked,
-    });
+    }, user.id);
     connection.current = next;
     await next.start();
-  }, []);
+  }, [user.id]);
   const end = useCallback(async () => {
     await connection.current?.end();
     setMuted(false);

@@ -116,3 +116,15 @@ Coverage: all five screens, exact voice model, backend delegation, credential-fr
 ## Execution Handoff
 
 Recommended approach: native execution in this chat, because the six tasks share tightly coupled contracts and media/session state. Implement in order, review the entire app after the journey works, and keep live verification conditional on credentials. Written plan approved; native execution selected and approved in conversation.
+
+## Google SSO revision
+
+User requested Google SSO for platform entry and confirmed no OAuth client exists: prepare integration and setup instructions. Implementation remains in the current checkout to preserve the running local preview and the user's unstaged video change.
+
+- [x] Add Auth.js Google OAuth with verified Google identity and server-only credentials; write the exact local callback/setup guide.
+- [x] Add the minimal Milo login screen, protect the platform layout and proxy, and independently authenticate each AI handler.
+- [x] Show the Google profile and sign-out; finish microphone cleanup before logout and clear mounted conversation state on account change.
+- [x] Scope manual/voice demo appointments and journey sample bookings to the Google subject. Keep existing anonymous storage unassigned.
+- [x] Add encrypted test-session fixtures without a production bypass; verify guest rejection, callback/scopes, safe redirects, forged cookies, browser Back, microphone cleanup and account isolation.
+- [x] Review sign-out concurrency: prevent protected/session GET responses from rolling cookies back into place after logout. Preserve OAuth callback and signout cookie handling.
+- [x] Inspect mobile/desktop login and document that real Google callback completion awaits the user's OAuth setup.

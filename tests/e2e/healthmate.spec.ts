@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "../helpers/authenticated";
 async function samplePlan(page: Page) {
   await page.goto("/journey");
   await page.getByRole("button", { name: "Try a demo", exact: true }).click();
@@ -50,7 +50,7 @@ test("demo booking persists only as explicitly synthetic data", async ({
   await page.getByRole("button", { name: "Select Dr. Anna Kowalska" }).click();
   await page.getByRole("button", { name: "Confirm demo appointment" }).click();
   const keys = await page.evaluate(() => Object.keys(localStorage));
-  expect(keys).toEqual(["healthmate-demo-booking"]);
+  expect(keys).toEqual(["healthmate-demo-booking:google-test-alex"]);
   await page.reload();
   await page.getByRole("button", { name: "Try a demo", exact: true }).click();
   for (let i = 0; i < 5; i++)

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { CalendarDays, FileText, UserRound, X } from "lucide-react";
 import { BookedAppointments } from "@/components/booked-appointments";
 import type { Message } from "@/lib/domain";
+import { useCurrentUser } from "@/components/platform-session";
+import { SignOutButton } from "@/components/sign-out-button";
 import {
   readDemoAppointments,
   type DemoAppointment,
@@ -22,10 +24,11 @@ export function AccountMenu({
   messages: Message[];
   beforeOpen: () => Promise<void>;
 }) {
+  const user = useCurrentUser();
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<Section | null>(null);
   const [opening, setOpening] = useState(false);
-  const [profileName, setProfileName] = useState("");
+  const [profileName, setProfileName] = useState(user.name ?? "");
   const [draftName, setDraftName] = useState("");
   const [appointments, setAppointments] = useState<DemoAppointment[]>([]);
   const wrapper = useRef<HTMLDivElement>(null);
@@ -53,7 +56,7 @@ export function AccountMenu({
     try {
       await beforeOpen();
       if (section === "Profile") setDraftName(profileName);
-      if (section === "Appointments") setAppointments(readDemoAppointments());
+      if (section === "Appointments") setAppointments(readDemoAppointments(undefined, user.id));
       setPanel(section);
     } finally {
       setOpening(false);
@@ -124,6 +127,7 @@ export function AccountMenu({
                 {name}
               </button>
             ))}
+            <SignOutButton menu beforeSignOut={beforeOpen} />
           </div>
         )}
       </div>
@@ -157,7 +161,8 @@ export function AccountMenu({
                   dialog.current?.close();
                 }}
               >
-                <p>A little about you.</p>
+                <p>Signed in with Google.</p>
+                <p className="account-note">{user.email}</p>
                 <label htmlFor="profile-name">Your name</label>
                 <input
                   id="profile-name"
@@ -167,7 +172,7 @@ export function AccountMenu({
                   onChange={(event) => setDraftName(event.target.value)}
                 />
                 <p className="account-note">
-                  Your profile stays in this page session. Refreshing clears it.
+                  Your Google account stays signed in. Name edits apply only to this page session.
                 </p>
                 <button className="button primary" type="submit">
                   Save profile

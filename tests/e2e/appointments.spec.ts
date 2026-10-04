@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../helpers/authenticated";
 import { fakeVoice } from "../helpers/fake-voice";
 
 async function tomorrow(page: import("@playwright/test").Page) {
@@ -136,7 +136,7 @@ test("Milo chooses a demo slot after urgent advice, saves agreement and avoids d
   expect(proposal.appointment).toMatchObject({ clinicianId: "anna", date, time: "15:30" });
   expect(
     await page.evaluate(() =>
-      localStorage.getItem("healthmate-demo-appointments"),
+      localStorage.getItem("healthmate-demo-appointments:google-test-alex"),
     ),
   ).toBeNull();
   await page.evaluate(

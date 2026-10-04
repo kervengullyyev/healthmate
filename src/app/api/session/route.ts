@@ -1,3 +1,4 @@
+import { requireUser } from "@/lib/server/authentication";
 import { z } from "zod";
 import { ApiError, callOpenAI, getLiveConfig } from "@/lib/server/openai";
 import { errorResponse, readBody, sessionBody } from "@/lib/server/requests";
@@ -8,6 +9,7 @@ const handshake = z.object({
 });
 export async function POST(request: Request) {
   try {
+    await requireUser();
     const { sdp } = await readBody(request, sessionBody);
     const result = handshake.safeParse(
       await callOpenAI("/live/sessions", {
