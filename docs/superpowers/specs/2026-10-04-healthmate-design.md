@@ -1,7 +1,7 @@
 # HealthMate hackathon MVP
 
 Date: 2026-10-04
-Status: Design approved in conversation; written specification awaiting review.
+Status: Design and written specification approved in conversation.
 
 ## Intent and success
 
