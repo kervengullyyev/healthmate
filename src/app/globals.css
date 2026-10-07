@@ -2238,10 +2238,12 @@ main {
   position: relative;
 }
 .milo-screen .avatar {
-  width: min(440px, 90vw, 65svh);
+  width: min(620px, 94vw, 75svh);
   height: auto;
   aspect-ratio: 1;
+  overflow: clip;
 }
+.milo-screen .mascot { transform: scale(1.15); }
 .milo-talk {
   display: inline-flex;
   align-items: center;
