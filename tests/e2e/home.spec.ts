@@ -133,3 +133,17 @@ test("keeps the supplied character visible if its Rive file cannot load", async 
   await expect(fallback).toHaveAttribute("src", /milo-rive-fallback/);
   await expect(page.getByRole("button", { name: "Talk to Milo", exact: true })).toBeEnabled();
 });
+
+test("preserves the original avatar's feathered brush shading", async ({ page }) => {
+  await page.goto("/");
+  const canvas = page.locator(".avatar canvas");
+  await expect(canvas).toHaveCSS("opacity", "1");
+  // In the supplied artboard, the shadow fades below the feet at this point.
+  // Canvas2D omits feathering entirely and leaves this pixel transparent.
+  await expect.poll(() => canvas.evaluate((element: HTMLCanvasElement) => {
+    const alpha = element.getContext("2d")!.getImageData(
+      Math.floor(element.width * 0.5), Math.floor(element.height * 0.81), 1, 1,
+    ).data[3];
+    return alpha > 5 && alpha < 220;
+  })).toBe(true);
+});

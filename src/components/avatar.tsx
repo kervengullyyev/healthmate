@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import type { Rive } from "@rive-app/canvas";
+import type { Rive } from "@rive-app/webgl2";
 
 type AvatarState = "idle" | "connecting" | "listening" | "speaking";
 // Values verified against the supplied SOBO-Motion-V02 state machine.
@@ -39,10 +39,10 @@ export function Avatar({
     const resize = () => instance?.resizeDrawingSurfaceToCanvas();
     const observer = new ResizeObserver(resize);
     observer.observe(element);
-    void import("@rive-app/canvas").then(({ Rive, RuntimeLoader, Layout, Fit, Alignment }) => {
+    void import("@rive-app/webgl2").then(({ Rive, RuntimeLoader, Layout, Fit, Alignment }) => {
       if (cancelled) return;
-      RuntimeLoader.setWasmUrl("/rive/rive.wasm");
-      RuntimeLoader.setWasmFallbackUrl("/rive/rive_fallback.wasm");
+      RuntimeLoader.setWasmUrl("/rive/webgl2/rive.wasm");
+      RuntimeLoader.setWasmFallbackUrl("/rive/webgl2/rive_fallback.wasm");
       instance = new Rive({
         canvas: element,
         src: "/animations/milo.riv",
@@ -50,6 +50,9 @@ export function Avatar({
         stateMachine: "State Machine",
         autoBind: true,
         autoplay: true,
+        // The Rive renderer preserves the file's vector feathering; sharing its
+        // GPU surface also retains a readable canvas for snapshots/fallbacks.
+        useOffscreenRenderer: true,
         enableRiveAssetCDN: false,
         shouldDisableRiveListeners: true,
         layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),

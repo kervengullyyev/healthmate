@@ -10,6 +10,9 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:3001",
     actionTimeout: 5000,
     trace: "retain-on-failure",
+    // Use the native GPU on macOS: SwiftShader's software feathering can
+    // saturate the host and starve input when multiple avatars are visible.
+    launchOptions: process.platform === "darwin" ? { args: ["--use-angle=metal"] } : {},
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
