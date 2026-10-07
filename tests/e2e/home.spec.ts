@@ -147,3 +147,79 @@ test("preserves the original avatar's feathered brush shading", async ({ page })
     return alpha > 5 && alpha < 220;
   })).toBe(true);
 });
+
+test.describe("avatar rendering budget", () => {
+  test.use({ deviceScaleFactor: 3 });
+  test("rests when idle or hidden and limits active rendering", async ({ page }, testInfo) => {
+    await page.addInitScript(() => {
+      const original = CanvasRenderingContext2D.prototype.drawImage;
+      (window as unknown as { avatarDraws: number }).avatarDraws = 0;
+      CanvasRenderingContext2D.prototype.drawImage = function (image: CanvasImageSource, ...coordinates: number[]) {
+        if (this.canvas.classList.contains("mascot-rive")) {
+          (window as unknown as { avatarDraws: number }).avatarDraws++;
+        }
+        return Reflect.apply(original, this, [image, ...coordinates]);
+      };
+    });
+    await fakeVoice(page, false, true);
+    await page.route("**/api/session", route => route.fulfill({ json: { transport: { sdp: "answer" } } }));
+    await page.goto("/");
+    const canvas = page.locator(".avatar canvas");
+    await expect(canvas).toHaveCSS("opacity", "1");
+    const draws = () => page.evaluate(() => (window as unknown as { avatarDraws: number }).avatarDraws);
+    const darkMouth = () => canvas.evaluate((c: HTMLCanvasElement) => {
+      const x = Math.floor(c.width * 0.45), y = Math.floor(c.height * 0.505);
+      const width = Math.floor(c.width * 0.07), height = Math.floor(c.height * 0.05);
+      const pixels = c.getContext("2d")!.getImageData(x, y, width, height).data;
+      let dark = 0;
+      for (let i = 0; i < pixels.length; i += 4) {
+        if (pixels[i + 3] > 100 && pixels[i] < 70 && pixels[i + 1] < 100 && pixels[i + 2] < 80) dark++;
+      }
+      return dark / (width * height);
+    });
+    await page.waitForTimeout(650);
+    const idle = await draws();
+    await page.waitForTimeout(1000);
+    expect(await draws() - idle).toBe(0);
+    expect(await canvas.evaluate((c: HTMLCanvasElement) => c.width / c.getBoundingClientRect().width)).toBeLessThanOrEqual(1.5);
+    expect(await canvas.evaluate((c: HTMLCanvasElement) => Math.max(c.width, c.height))).toBeLessThanOrEqual(960);
+    await page.getByRole("button", { name: "Talk to Milo", exact: true }).click();
+    await page.evaluate(() => { window.voiceTest.speaking = true; });
+    await expect(page.locator(".avatar-speaking")).toBeVisible();
+    const active = await draws();
+    await page.waitForTimeout(2000);
+    const frames = await draws() - active;
+    expect(frames).toBeGreaterThan(5);
+    expect(frames).toBeLessThanOrEqual(65);
+    await testInfo.attach("rendering-budget.json", {
+      body: JSON.stringify({ idleFrames: 0, speakingFramesInTwoSeconds: frames, surface: await canvas.evaluate((c: HTMLCanvasElement) => ({ width: c.width, height: c.height, dpr: window.devicePixelRatio })) }),
+      contentType: "application/json",
+    });
+    await page.evaluate(() => {
+      Object.defineProperty(document, "hidden", { configurable: true, value: true });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    const hidden = await draws();
+    await page.waitForTimeout(500);
+    expect(await draws() - hidden).toBe(0);
+    await page.evaluate(() => {
+      Object.defineProperty(document, "hidden", { configurable: true, value: false });
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await expect.poll(draws).toBeGreaterThan(hidden);
+    await page.locator(".avatar").evaluate(e => { (e as HTMLElement).style.transform = "translateY(200vh)"; });
+    await page.waitForTimeout(200);
+    const outside = await draws();
+    await page.waitForTimeout(500);
+    expect(await draws() - outside).toBe(0);
+    await page.locator(".avatar").evaluate(e => { (e as HTMLElement).style.transform = ""; });
+    await expect.poll(draws).toBeGreaterThan(outside);
+    await expect.poll(darkMouth).toBeGreaterThan(0.05);
+    await page.getByRole("button", { name: "End conversation", exact: true }).click();
+    await expect.poll(darkMouth, { timeout: 2000 }).toBeLessThan(0.01);
+    await page.waitForTimeout(650);
+    const ended = await draws();
+    await page.waitForTimeout(500);
+    expect(await draws() - ended).toBe(0);
+  });
+});
