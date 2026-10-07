@@ -11,7 +11,7 @@ export default async function Login({ searchParams }: { searchParams: Promise<{ 
   const configured = googleSignInConfigured();
   return <main className="login-screen">
     <section className="login-card" aria-labelledby="login-title">
-      <Image src="/images/healthmate-avatar.png" alt="Milo, your ontuc companion" width={180} height={180} priority />
+      <Image src="/images/milo-rive-fallback.png" alt="Milo, your ontuc companion" width={180} height={180} priority />
       <h1 id="login-title">Welcome to ontuc</h1>
       <p>A little clarity. A little care.</p>
       <GoogleSignIn configured={configured} returnTo={returnTo} />

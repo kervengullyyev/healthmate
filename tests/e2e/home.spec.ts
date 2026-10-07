@@ -3,7 +3,7 @@ import { fakeVoice } from "../helpers/fake-voice";
 
 test("keeps Milo centered with one voice action and a compact account icon", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto("/");
   await expect(page.getByRole("img", { name: /Milo/ })).toBeVisible();
   await expect(
@@ -12,9 +12,11 @@ test("keeps Milo centered with one voice action and a compact account icon", asy
   await expect(page.getByRole("button")).toHaveCount(2);
   await expect(page.locator("nav, header, footer")).toHaveCount(0);
   await expect(page.getByRole("heading")).toHaveCount(0);
+  await expect(page.locator(".avatar canvas")).toHaveCSS("opacity", "1");
+  await page.screenshot({ path: testInfo.outputPath("milo-rive-desktop.png") });
 });
 
-test("Milo and the button fit on a mobile screen", async ({ page }) => {
+test("Milo and the button fit on a mobile screen", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await expect(
@@ -25,6 +27,8 @@ test("Milo and the button fit on a mobile screen", async ({ page }) => {
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  await expect(page.locator(".avatar canvas")).toHaveCSS("opacity", "1");
+  await page.screenshot({ path: testInfo.outputPath("milo-rive-mobile.png") });
 });
 
 test("the same button starts and ends voice while keeping the screen minimal", async ({
@@ -82,112 +86,50 @@ test("unconfigured voice reports a short error without requesting the microphone
   await expect(page.getByRole("button")).toHaveCount(2);
 });
 
-test("plays and loops Milo's video during speech, then returns to the still avatar", async ({
-  page,
-}, testInfo) => {
+test("animates the Rive avatar through speech gaps and responds to interruption", async ({ page }, testInfo) => {
   await fakeVoice(page, false, true);
-  await page.route("**/api/session", (route) =>
-    route.fulfill({ json: { transport: { sdp: "answer" } } }),
-  );
+  await page.route("**/api/session", route => route.fulfill({ json: { transport: { sdp: "answer" } } }));
   await page.goto("/");
+  const canvas = page.locator(".avatar canvas");
+  await expect(canvas).toBeVisible();
+  await expect(canvas).toHaveCSS("opacity", "1");
+  const frame = () => canvas.evaluate((element: HTMLCanvasElement) => element.toDataURL());
+  await expect.poll(() => canvas.evaluate((element: HTMLCanvasElement) => {
+    const pixels = element.getContext("2d")!.getImageData(0, 0, element.width, element.height).data;
+    return pixels.some((value, index) => index % 4 === 3 && value > 0);
+  })).toBe(true);
   await page.getByRole("button", { name: "Talk to Milo", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "End conversation", exact: true }),
-  ).toBeVisible();
-  await page.evaluate(() => {
-    window.voiceTest.speaking = true;
-  });
-  const video = page.locator(".avatar video");
-  await expect(video).toHaveCount(1);
-  await expect
-    .poll(() =>
-      video.evaluate(
-        (element: HTMLVideoElement) =>
-          !element.paused && element.currentTime > 0,
-      ),
-    )
-    .toBe(true);
-  await expect(video).toHaveCSS("opacity", "1");
-  await page.screenshot({ path: testInfo.outputPath("milo-speaking.png") });
-  expect(
-    await video.evaluate((element: HTMLVideoElement) => ({
-      src: new URL(element.currentSrc).pathname,
-      muted: element.muted,
-      loop: element.loop,
-      inline: element.playsInline,
-      controls: element.controls,
-    })),
-  ).toEqual({
-    src: "/videos/milo.webm",
-    muted: true,
-    loop: true,
-    inline: true,
-    controls: false,
-  });
-  await video.evaluate((element: HTMLVideoElement) => {
-    element.currentTime = element.duration - 0.15;
-  });
-  await expect
-    .poll(() =>
-      video.evaluate(
-        (element: HTMLVideoElement) =>
-          element.currentTime < 1 && !element.paused,
-      ),
-    )
-    .toBe(true);
-  await page.evaluate(() => {
-    window.voiceTest.speaking = false;
-  });
-  await video.evaluate(async (element: HTMLVideoElement) => {
-    element.dataset.pauses = "0";
-    element.addEventListener("pause", () => {
-      element.dataset.pauses = String(Number(element.dataset.pauses) + 1);
-    });
-    await new Promise((resolve) => setTimeout(resolve, 1100));
-  });
-  expect(
-    await video.evaluate((element: HTMLVideoElement) => ({
-      paused: element.paused,
-      pauses: element.dataset.pauses,
-    })),
-  ).toEqual({ paused: false, pauses: "0" });
-  await page.evaluate(() => {
-    window.voiceTest.speaking = true;
-  });
-  await expect
-    .poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused))
-    .toBe(true);
-  await page.evaluate(() => {
-    window.voiceTest.userSpeaking = true;
-  });
-  await expect
-    .poll(() => video.evaluate((element: HTMLVideoElement) => element.paused), {
-      timeout: 1000,
-    })
-    .toBe(true);
-  await page.evaluate(() => {
-    window.voiceTest.userSpeaking = false;
-    window.voiceTest.speaking = false;
-  });
-  await video.evaluate(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 400));
-  });
-  await page.evaluate(() => {
-    window.voiceTest.speaking = true;
-  });
-  await expect
-    .poll(() => video.evaluate((element: HTMLVideoElement) => !element.paused))
-    .toBe(true);
-  await page.evaluate(() => {
-    window.voiceTest.speaking = false;
-  });
-  await expect
-    .poll(() => video.evaluate((element: HTMLVideoElement) => element.paused))
-    .toBe(true);
-  await expect(video).toHaveCSS("opacity", "0");
-  await expect(page.locator(".avatar img")).toHaveCSS("opacity", "1");
-  await page
-    .getByRole("button", { name: "End conversation", exact: true })
-    .click();
+  await expect(page.locator(".avatar-listening")).toBeVisible();
+  await page.evaluate(() => { window.voiceTest.speaking = true; });
+  await expect(page.locator(".avatar-speaking")).toBeVisible();
+  const speakingFrame = await frame();
+  await expect.poll(frame).not.toBe(speakingFrame);
+  await page.screenshot({ path: testInfo.outputPath("milo-rive-speaking.png") });
+  await page.evaluate(() => { window.voiceTest.speaking = false; });
+  await page.waitForTimeout(1100);
+  await expect(page.locator(".avatar-speaking")).toBeVisible();
+  await page.evaluate(() => { window.voiceTest.speaking = true; });
+  await page.waitForTimeout(5000);
+  const laterFrame = await frame();
+  await expect.poll(frame).not.toBe(laterFrame);
+  await page.evaluate(() => { window.voiceTest.userSpeaking = true; });
+  await expect(page.locator(".avatar-listening")).toBeVisible({ timeout: 1000 });
+  await page.evaluate(() => { window.voiceTest.userSpeaking = false; window.voiceTest.speaking = false; });
+  await page.waitForTimeout(400);
+  await page.evaluate(() => { window.voiceTest.speaking = true; });
+  await expect(page.locator(".avatar-speaking")).toBeVisible();
+  await page.evaluate(() => { window.voiceTest.speaking = false; });
+  await expect(page.locator(".avatar-listening")).toBeVisible();
+  await page.getByRole("button", { name: "End conversation", exact: true }).click();
+  await expect(page.locator(".avatar-idle")).toBeVisible();
   await expect(page.getByRole("button")).toHaveCount(2);
+});
+
+test("keeps the supplied character visible if its Rive file cannot load", async ({ page }) => {
+  await page.route("**/animations/milo.riv", route => route.abort());
+  await page.goto("/");
+  const fallback = page.locator(".avatar img");
+  await expect(fallback).toBeVisible();
+  await expect(fallback).toHaveAttribute("src", /milo-rive-fallback/);
+  await expect(page.getByRole("button", { name: "Talk to Milo", exact: true })).toBeEnabled();
 });

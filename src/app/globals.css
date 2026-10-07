@@ -434,7 +434,7 @@ main {
   height: 205px;
 }
 .mascot-image { opacity: 1; }
-.mascot-video {
+.mascot-rive {
   position: absolute;
   inset: 0;
   opacity: 0;
@@ -442,8 +442,9 @@ main {
   filter: none;
   pointer-events: none;
 }
-.avatar-video-active .mascot-video { opacity: 1; }
-.avatar-video-active .mascot-image { opacity: 0; }
+.avatar-rive-ready .mascot-rive { opacity: 1; }
+.avatar-rive-ready .mascot-image { opacity: 0; }
+.avatar .mascot-image { animation: none; }
 .avatar-orbit {
   position: absolute;
   inset: 20%;
