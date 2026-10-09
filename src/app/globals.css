@@ -434,7 +434,7 @@ main {
   height: 205px;
 }
 .mascot-image { opacity: 1; }
-.mascot-rive {
+.mascot-svg {
   position: absolute;
   inset: 0;
   opacity: 0;
@@ -442,8 +442,8 @@ main {
   filter: none;
   pointer-events: none;
 }
-.avatar-rive-ready .mascot-rive { opacity: 1; }
-.avatar-rive-ready .mascot-image { opacity: 0; }
+.mascot-svg-ready { opacity: 1; }
+.avatar-einstein .mascot-image { filter: none; }
 .avatar .mascot-image { animation: none; }
 .avatar-orbit {
   position: absolute;
@@ -2228,6 +2228,7 @@ main {
 
 /* The main experience: just Milo and one voice action. */
 .milo-screen {
+  background: #fff;
   width: 100%;
   min-height: 100svh;
   padding: 32px 24px;
@@ -2243,7 +2244,7 @@ main {
   aspect-ratio: 1;
   overflow: clip;
 }
-.milo-screen .mascot { transform: scale(1.15); }
+.milo-screen .mascot { transform: none; }
 .milo-talk {
   display: inline-flex;
   align-items: center;
@@ -2272,7 +2273,7 @@ main {
   text-align: center;
 }
 
-.login-screen { min-height: 100svh; display: grid; place-items: center; padding: 32px 20px; background: radial-gradient(ellipse at 50% 35%, #edf6ed 0, var(--bg) 65%); }
+.login-screen { min-height: 100svh; display: grid; place-items: center; padding: 32px 20px; background: #fff; }
 .login-card { width: min(400px, 100%); display: flex; flex-direction: column; align-items: center; text-align: center; }
 .login-card > img { object-fit: contain; margin-bottom: 28px; }
 .login-card h1 { font-size: clamp(25px, 5vw, 30px); letter-spacing: -1px; margin-bottom: 12px; }
