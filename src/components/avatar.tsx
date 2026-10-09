@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 type AvatarState = "idle" | "connecting" | "listening" | "speaking";
 
-function AnimatedEinstein({ clip }: { clip: "wave" | "speaking" }) {
+function AnimatedEinstein({ clip }: { clip: "idle" | "wave" | "speaking" }) {
   const [ready, setReady] = useState(false);
   return <Image
     src={`/animations/einstein.svg#${clip}`}
@@ -35,14 +35,14 @@ export function Avatar({ state = "idle", compact = false }: { state?: AvatarStat
       document.removeEventListener("visibilitychange", update);
     };
   }, []);
-  const clip = state === "connecting" ? "wave" : state === "speaking" ? "speaking" : null;
+  const clip = state === "connecting" ? "wave" : state === "speaking" ? "speaking" : "idle";
   return <div
     ref={element} role="img" aria-label="Milo, your Einstein-style ontuc companion"
     className={`avatar avatar-einstein avatar-${state} ${compact ? "avatar-compact" : ""}`}
   >
     <Image src="/images/einstein-idle.png" width={1080} height={1080}
       alt="" aria-hidden="true" priority className="mascot mascot-image" />
-    {/* Unmount animated image documents completely while resting or hidden. */}
-    {visible && clip && <AnimatedEinstein key={clip} clip={clip} />}
+    {/* Unmount animated image documents completely while hidden/offscreen. */}
+    {visible && <AnimatedEinstein key={clip} clip={clip} />}
   </div>;
 }

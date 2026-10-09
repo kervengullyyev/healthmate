@@ -13,6 +13,7 @@ test("keeps Milo centered with one voice action and a compact account icon", asy
   await expect(page.locator("nav, header, footer")).toHaveCount(0);
   await expect(page.getByRole("heading")).toHaveCount(0);
   await expect.poll(() => page.locator(".mascot-image").evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true);
+  await expect(page.locator(".mascot-svg")).toHaveCSS("opacity", "1");
   await page.screenshot({ path: testInfo.outputPath("milo-einstein-desktop.png") });
 });
 
@@ -28,6 +29,7 @@ test("Milo and the button fit on a mobile screen", async ({ page }, testInfo) =>
     ),
   ).toBe(true);
   await expect.poll(() => page.locator(".mascot-image").evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true);
+  await expect(page.locator(".mascot-svg")).toHaveCSS("opacity", "1");
   await page.screenshot({ path: testInfo.outputPath("milo-einstein-mobile.png") });
 });
 
@@ -74,14 +76,14 @@ test("animates Einstein's SVG through speech gaps and stops on interruption", as
   await expect.poll(frame).not.toBe(later);
   await page.evaluate(() => { window.voiceTest.userSpeaking = true; });
   await expect(page.locator(".avatar-listening")).toBeVisible({ timeout: 1000 });
-  await expect(svg).toHaveCount(0);
+  await expect(svg).toHaveAttribute("src", /#idle$/);
   await page.evaluate(() => { window.voiceTest.userSpeaking = false; window.voiceTest.speaking = false; });
   await page.waitForTimeout(400);
   await page.evaluate(() => { window.voiceTest.speaking = true; });
   await expect(svg).toHaveCSS("opacity", "1");
   await page.getByRole("button", { name: "End conversation", exact: true }).click();
   await expect(page.locator(".avatar-idle")).toBeVisible();
-  await expect(svg).toHaveCount(0);
+  await expect(svg).toHaveAttribute("src", /#idle$/);
   await expect(page.locator(".mascot-image")).toHaveAttribute("src", /einstein-idle/);
 });
 
@@ -99,18 +101,20 @@ test("keeps Einstein visible when the animated SVG cannot load", async ({ page }
   await expect(page.getByRole("button", { name: "End conversation", exact: true })).toBeEnabled();
 });
 
-test("uses a still image while idle or hidden without loading a WebGL runtime", async ({ page }) => {
+test("plays idle animation and pauses when hidden without loading a WebGL runtime", async ({ page }) => {
   const graphicsRequests: string[] = [];
   page.on("request", r => { if (/\.wasm|\.riv|\/rive\//.test(r.url())) graphicsRequests.push(r.url()); });
   await fakeVoice(page, false, true);
   await page.route("**/api/session", route => route.fulfill({ json: { transport: { sdp: "answer" } } }));
   await page.goto("/");
   await expect(page.locator(".mascot-image")).toHaveAttribute("src", /einstein-idle/);
-  await expect(page.locator(".mascot-svg, .avatar canvas")).toHaveCount(0);
+  await expect(page.locator(".mascot-svg")).toHaveAttribute("src", /einstein\.svg#idle$/);
+  await expect(page.locator(".avatar canvas")).toHaveCount(0);
   await expect.poll(() => page.locator(".mascot-image").evaluate((e: HTMLImageElement) => e.complete && e.naturalWidth > 0)).toBe(true);
-  const still = await page.locator(".avatar").screenshot();
-  await page.waitForTimeout(500);
-  expect(await page.locator(".avatar").screenshot()).toEqual(still);
+  await expect(page.locator(".mascot-svg")).toHaveCSS("opacity", "1");
+  const frame = async () => (await page.locator(".avatar").screenshot({ animations: "allow" })).toString("base64");
+  const first = await frame();
+  await expect.poll(frame).not.toBe(first);
   await page.getByRole("button", { name: "Talk to Milo", exact: true }).click();
   await page.evaluate(() => { window.voiceTest.speaking = true; });
   await expect(page.locator(".mascot-svg")).toHaveCSS("opacity", "1");
@@ -129,7 +133,8 @@ test("uses a still image while idle or hidden without loading a WebGL runtime", 
   await page.locator(".avatar").evaluate(e => { (e as HTMLElement).style.transform = ""; });
   await expect(page.locator(".mascot-svg")).toHaveCSS("opacity", "1");
   await page.getByRole("button", { name: "End conversation", exact: true }).click();
-  await expect(page.locator(".mascot-svg, .avatar canvas")).toHaveCount(0);
+  await expect(page.locator(".mascot-svg")).toHaveAttribute("src", /einstein\.svg#idle$/);
+  await expect(page.locator(".avatar canvas")).toHaveCount(0);
   expect(graphicsRequests).toEqual([]);
 });
 
